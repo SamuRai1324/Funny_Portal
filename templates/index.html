@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<div class="center">
+    <h1>MyApp</h1>
+    {% if current_user %}
+        <p>Привет, <b>{{ current_user.username }}</b>!</p>
+        <p>Роль: <span class="role {{ current_user.role }}">{{ current_user.role }}</span></p>
+        <p>Регистрация: {{ current_user.created_at[:10] }}</p>
+    {% else %}
+        <p>Добро пожаловать</p>
+        <a href="{{ url_for('register') }}" class="btn">Регистрация</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline">Вход</a>
+    {% endif %}
+</div>
+{% endblock %}
