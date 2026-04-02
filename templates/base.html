@@ -2,32 +2,57 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyApp{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('index') }}" class="logo">MyApp</a>
-        <div class="nav-links">
-            <a href="{{ url_for('index') }}">Главная</a>
+        <div class="nav-left">
+            <a href="/" class="logo">MyApp</a>
+        </div>
+        <div class="nav-center">
+            <div class="search-bar">
+                <input type="text" placeholder="Поиск...">
+                <button>🔍</button>
+            </div>
+        </div>
+        <div class="nav-right nav-links">
+            <a href="/">Главная</a>
             {% if current_user %}
-                <a href="{{ url_for('logout') }}">Выйти</a>
+                <a href="/logout" style="color: #da3633;">Выйти</a>
             {% else %}
-                <a href="{{ url_for('login') }}">Вход</a>
-                <a href="{{ url_for('register') }}">Регистрация</a>
+                <a href="/login">Вход</a>
+                <a href="/register">Регистрация</a>
             {% endif %}
         </div>
     </nav>
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for cat, msg in messages %}
-                    <div class="alert {{ cat }}">{{ msg }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
+
+    <div class="layout-container">
+        <main class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for cat, msg in messages %}
+                        <div class="alert {{ cat }}">{{ msg }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if current_user %}
+        <aside class="sidebar">
+            <div class="messenger-box">
+                <div class="messenger-header">Чат (Beta)</div>
+                <div class="messenger-messages">
+                    <p class="sys-msg">Чат в разработке</p>
+                </div>
+                <div class="messenger-input">
+                    <input type="text" placeholder="Сообщение..." disabled>
+                    <button class="btn" disabled>></button>
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+    </div>
 </body>
 </html>
