@@ -208,4 +208,4 @@ aura_nexus/
 
 ## Автор
 
-Aura Nexus Team © 2026
+Aura Nexus Team 2026 © all rights reserved
