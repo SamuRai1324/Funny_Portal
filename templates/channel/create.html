@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Создать канал - Aura Nexus{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px;">
+    <h1 style="margin-bottom: 1.5rem;">📺 Создать канал</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="/channel/create" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">Название канала</label>
+                    <input type="text" name="name" class="form-control" placeholder="Уникальное название" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <textarea name="description" class="form-control" placeholder="О чём ваш канал?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Аватар канала</label>
+                    <div class="file-upload" style="padding: 1rem;">
+                        <input type="file" name="avatar" accept="image/*">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📺</div>
+                            <div>
+                                <div class="file-upload-text">Нажмите для загрузки</div>
+                                <div class="file-upload-hint">Рекомендуемый размер: 200x200</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Баннер канала</label>
+                    <div class="file-upload">
+                        <input type="file" name="banner" accept="image/*">
+                        <div class="file-upload-icon">🖼️</div>
+                        <div class="file-upload-text">Нажмите или перетащите</div>
+                        <div class="file-upload-hint">Рекомендуемый размер: 1500x500</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn">Создать канал</button>
+                    <a href="/channels" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

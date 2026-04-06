@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Жалобы - Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📋 Жалобы</h1>
+</div>
+
+<div class="tabs report-tabs">
+    <a href="/admin/reports?status=pending" class="tab {% if current_status == 'pending' %}active{% endif %}">
+        Ожидают рассмотрения
+    </a>
+    <a href="/admin/reports?status=approved" class="tab {% if current_status == 'approved' %}active{% endif %}">
+        Одобренные
+    </a>
+    <a href="/admin/reports?status=rejected" class="tab {% if current_status == 'rejected' %}active{% endif %}">
+        Отклонённые
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body no-padding">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Отправитель</th>
+                    <th>Тип</th>
+                    <th>Категория</th>
+                    <th>Описание</th>
+                    <th>Дата</th>
+                    {% if current_status == 'pending' %}
+                    <th>Действия</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.id }}</td>
+                    <td>
+                        <a href="/profile/{{ report.reporter_name }}">{{ report.reporter_name }}</a>
+                    </td>
+                    <td>
+                        {% if report.post_id %}
+                        <span class="badge badge-info">Пост</span>
+                        {% elif report.comment_id %}
+                        <span class="badge badge-warning">Комментарий</span>
+                        {% elif report.user_id %}
+                        <span class="badge badge-purple">Пользователь</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge">{{ report.category }}</span>
+                    </td>
+                    <td class="description-cell">
+                        {{ report.description or 'Без описания' }}
+                    </td>
+                    <td>{{ report.created_at[:16] }}</td>
+                    {% if current_status == 'pending' %}
+                    <td>
+                        <div class="action-buttons">
+                            <form method="POST" action="/admin/reports/{{ report.id }}/handle" class="inline-form">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-sm btn-success" title="Одобрить и удалить контент">✓</button>
+                            </form>
+                            <form method="POST" action="/admin/reports/{{ report.id }}/handle" class="inline-form">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Отклонить жалобу">✕</button>
+                            </form>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Жалоб нет</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.report-tabs {
+    margin-bottom: 1rem;
+}
+
+.description-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}

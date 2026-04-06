@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Написать статью - Aura Nexus{% endblock %}
+
+{% block head %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px;">
+    <h1 style="margin-bottom: 1.5rem;">📄 Написать статью</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="/create/article" id="article-form">
+                {% if channels %}
+                <div class="form-group">
+                    <label class="form-label">Опубликовать в</label>
+                    <select name="channel_id" class="form-control">
+                        <option value="">От своего имени</option>
+                        {% for channel in channels %}
+                        <option value="{{ channel.id }}">📺 {{ channel.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label class="form-label">Заголовок статьи</label>
+                    <input type="text" name="title" class="form-control" placeholder="Введите заголовок" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Содержание</label>
+                    <div id="editor" style="min-height: 300px;"></div>
+                    <input type="hidden" name="content" id="content-input">
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn">Опубликовать</button>
+                    <a href="/" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+var quill = new Quill('#editor', {
+    theme: 'snow',
+    placeholder: 'Начните писать статью...',
+    modules: {
+        toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['blockquote', 'code-block'],
+            ['link'],
+            ['clean']
+        ]
+    }
+});
+
+document.getElementById('article-form').addEventListener('submit', function(e) {
+    var content = quill.root.innerHTML;
+    if (content === '<p><br></p>' || content.trim() === '') {
+        e.preventDefault();
+        alert('Введите содержание статьи');
+        return;
+    }
+    document.getElementById('content-input').value = content;
+});
+</script>
+{% endblock %}

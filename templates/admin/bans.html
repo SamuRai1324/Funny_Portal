@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Баны - Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🚫 История банов</h1>
+</div>
+
+<div class="card">
+    <div class="card-body no-padding">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Забанил</th>
+                    <th>Тип</th>
+                    <th>Причина</th>
+                    <th>До</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ban in bans %}
+                <tr>
+                    <td>
+                        <a href="/profile/{{ ban.banned_username }}">{{ ban.banned_username }}</a>
+                    </td>
+                    <td>
+                        <a href="/profile/{{ ban.admin_username }}">{{ ban.admin_username }}</a>
+                    </td>
+                    <td>
+                        {% if ban.is_permanent %}
+                        <span class="badge badge-danger">Перманентный</span>
+                        {% else %}
+                        <span class="badge badge-warning">Временный</span>
+                        {% endif %}
+                    </td>
+                    <td class="reason-cell">{{ ban.reason or 'Не указана' }}</td>
+                    <td>
+                        {% if ban.ban_until %}
+                        {{ ban.ban_until[:16] }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>{{ ban.created_at[:16] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">Банов нет</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.reason-cell {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}

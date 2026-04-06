@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Чат с {{ other_user.username }} - Aura Nexus{% endblock %}
+
+{% block content %}
+<div class="chat-page">
+    <div class="chat-header-bar">
+        <a href="/messages" class="back-link">← Назад</a>
+        <div class="chat-user-info">
+            <div class="chat-user-avatar">
+                {% if other_user.avatar %}
+                <img src="{{ url_for('uploaded_file', filename=other_user.avatar) }}" alt="">
+                {% else %}
+                {{ other_user.username[0]|upper }}
+                {% endif %}
+            </div>
+            <a href="/profile/{{ other_user.username }}" class="chat-user-name">{{ other_user.username }}</a>
+        </div>
+    </div>
+
+    <div class="card chat-container">
+        <div id="private-messages" class="private-messages-list">
+            {% for msg in messages %}
+            <div class="private-message {% if msg.sender_id == current_user.id %}own-message{% else %}other-message{% endif %}">
+                <div class="private-message-avatar">
+                    {% if msg.avatar %}
+                    <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
+                    {% else %}
+                    {{ msg.username[0]|upper }}
+                    {% endif %}
+                </div>
+                <div class="private-message-bubble">
+                    <div class="private-message-text">{{ msg.content }}</div>
+                    <div class="private-message-time">{{ msg.created_at[11:16] }}</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state chat-empty">
+                <div class="empty-state-icon">💬</div>
+                <p>Начните диалог!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <form id="private-message-form" method="POST" class="private-message-form">
+            <input type="text" name="content" placeholder="Написать сообщение..." class="form-control message-input" autocomplete="off" required>
+            <button type="submit" class="btn send-btn">Отправить</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.chat-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.chat-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.back-link {
+    color: var(--text-muted);
+}
+
+.chat-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chat-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.chat-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-user-name {
+    font-weight: 600;
+}
+
+.chat-container {
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.private-messages-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.private-message {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.private-message.own-message {
+    flex-direction: row-reverse;
+}
+
+.private-message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.private-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.private-message-bubble {
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    background: var(--bg-tertiary);
+    border-bottom-left-radius: 4px;
+}
+
+.own-message .private-message-bubble {
+    background: var(--accent-primary);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 4px;
+}
+
+.private-message-text {
+    font-size: 0.9rem;
+}
+
+.private-message-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    text-align: right;
+}
+
+.own-message .private-message-time {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.private-message-form {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.message-input {
+    margin: 0;
+    border-radius: 20px;
+}
+
+.send-btn {
+    border-radius: 20px;
+    padding: 0 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var messages = document.getElementById('private-messages');
+if (messages) {
+    messages.scrollTop = messages.scrollHeight;
+}
+</script>
+{% endblock %}

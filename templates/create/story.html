@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Создать историю - Aura Nexus{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h1 style="margin-bottom: 1.5rem; text-align: center;">⏱️ Создать историю</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="alert alert-info">
+                История будет видна 24 часа, затем переместится в архив вашего профиля.
+            </div>
+
+            <form method="POST" action="/create/story" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">Фото или видео</label>
+                    <div class="file-upload">
+                        <input type="file" name="media" accept="image/*,video/*">
+                        <div class="file-upload-icon">📷</div>
+                        <div class="file-upload-text">Нажмите для загрузки</div>
+                        <div class="file-upload-hint">Фото или видео</div>
+                        <div class="file-preview"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Текст (необязательно)</label>
+                    <textarea name="content" class="form-control" placeholder="Добавьте описание..." style="min-height: 80px;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-full">Опубликовать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

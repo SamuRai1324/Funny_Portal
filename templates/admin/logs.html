@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Логи - Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📝 Логи действий</h1>
+</div>
+
+<div class="card">
+    <div class="card-body no-padding">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Админ</th>
+                    <th>Действие</th>
+                    <th>Тип объекта</th>
+                    <th>ID объекта</th>
+                    <th>Детали</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td>
+                        <a href="/profile/{{ log.admin_username }}">{{ log.admin_username }}</a>
+                    </td>
+                    <td>
+                        <span class="badge badge-action-{{ log.action.split('_')[0] }}">{{ log.action }}</span>
+                    </td>
+                    <td>{{ log.target_type or '—' }}</td>
+                    <td>{{ log.target_id or '—' }}</td>
+                    <td class="details-cell">{{ log.details or '—' }}</td>
+                    <td>{{ log.created_at[:16] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Логов нет</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.details-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.badge-action-ban {
+    background: rgba(218, 54, 51, 0.2);
+    color: #f85149;
+}
+
+.badge-action-unban {
+    background: rgba(35, 134, 54, 0.2);
+    color: #3fb950;
+}
+
+.badge-action-delete {
+    background: rgba(218, 54, 51, 0.2);
+    color: #f85149;
+}
+
+.badge-action-change {
+    background: rgba(31, 111, 235, 0.2);
+    color: #58a6ff;
+}
+
+.badge-action-report {
+    background: rgba(158, 106, 3, 0.2);
+    color: #d29922;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}

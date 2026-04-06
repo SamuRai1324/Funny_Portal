@@ -3,73 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}MyApp{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>{% block title %}Aura Nexus{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <div class="nav-left">
-            <a href="/" class="logo">MyApp</a>
-        </div>
-        <div class="nav-center">
-            <form class="search-bar" action="/" method="GET">
-                <input type="text" name="q" placeholder="Поиск постов..." value="{{ request.args.get('q', '') }}">
-                <button type="submit">🔍</button>
-            </form>
-        </div>
-        <div class="nav-right nav-links">
-            <a href="/">Главная</a>
-            {% if current_user %}
-                <span style="color: #8b949e;">{{ current_user.username }}</span>
-                <a href="/logout" style="color: #da3633;">Выйти</a>
-            {% else %}
-                <a href="/login">Вход</a>
-                <a href="/register">Регистрация</a>
-            {% endif %}
-        </div>
-    </nav>
+    {% if current_user and current_user.role == 'admin' %}
+    <div class="admin-bar">
+        <span class="admin-bar-label">⚙️ АДМИН</span>
+        <a href="/admin">📊 Статистика</a>
+        <a href="/admin/users">👥 Пользователи</a>
+        <a href="/admin/reports">
+            📋 Жалобы
+            {% set pending = get_pending_reports_count() if get_pending_reports_count is defined else 0 %}
+            {% if pending > 0 %}<span class="badge">{{ pending }}</span>{% endif %}
+        </a>
+        <a href="/admin/bans">🚫 Баны</a>
+        <a href="/admin/logs">📝 Логи</a>
+    </div>
+    {% elif current_user and current_user.role == 'moderator' %}
+    <div class="admin-bar">
+        <span class="admin-bar-label">🛡️ МОДЕРАТОР</span>
+        <a href="/admin/reports">
+            📋 Жалобы
+            {% set pending = get_pending_reports_count() if get_pending_reports_count is defined else 0 %}
+            {% if pending > 0 %}<span class="badge">{{ pending }}</span>{% endif %}
+        </a>
+        <a href="/admin/bans">🚫 Баны</a>
+    </div>
+    {% endif %}
 
-    <div class="layout-container">
-        <main class="content">
+    <nav>
+    <a href="/" class="logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image">
+        <span>Aura Nexus</span>
+    </a>
+
+    <div class="search-container">
+        <form class="search-bar" action="/" method="GET">
+            <input type="text" name="q" placeholder="Поиск..." value="{{ request.args.get('q', '') }}">
+            <button type="submit">🔍</button>
+        </form>
+    </div>
+
+    <div class="nav-links">
+        <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
+            <span>🏠</span>
+            <span>Главная</span>
+        </a>
+        <a href="/channels" class="nav-link {% if '/channel' in request.path %}active{% endif %}">
+            <span>📺</span>
+            <span>Каналы</span>
+        </a>
+        
+        {% if current_user %}
+        <a href="/messages" class="nav-link {% if '/messages' in request.path %}active{% endif %}">
+            <span>✉️</span>
+            <span>Сообщения</span>
+            {% if message_count > 0 %}
+            <span class="badge">{{ message_count }}</span>
+            {% endif %}
+        </a>
+        <a href="/notifications" class="nav-link {% if '/notifications' in request.path %}active{% endif %}">
+            <span>🔔</span>
+            {% if notification_count > 0 %}
+            <span class="badge notification-badge">{{ notification_count }}</span>
+            {% endif %}
+        </a>
+
+        <div class="dropdown">
+            <div class="nav-user">
+                <div class="nav-user-avatar">
+                    {% if current_user.avatar %}
+                    <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
+                    {% else %}
+                    {{ current_user.username[0]|upper }}
+                    {% endif %}
+                </div>
+                <span>▼</span>
+            </div>
+            <div class="dropdown-menu">
+                <a href="/profile/{{ current_user.username }}">
+                    <span>👤</span> Мой профиль
+                </a>
+                <a href="/profile/settings">
+                    <span>⚙️</span> Настройки
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="/logout" class="danger">
+                    <span>🚪</span> Выйти
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <a href="/login" class="nav-link">
+            <span>🔑</span>
+            <span>Вход</span>
+        </a>
+        <a href="/register" class="btn btn-sm">Регистрация</a>
+        {% endif %}
+    </div>
+</nav>
+
+    <div class="layout">
+        <main class="main-content">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for cat, msg in messages %}
-                        <div class="alert {{ cat }}">{{ msg }}</div>
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+            
             {% block content %}{% endblock %}
         </main>
 
         {% if current_user %}
         <aside class="sidebar">
-            <div class="chat-box">
-                <div class="chat-header">🌐 Общий чат</div>
-                <div class="chat-messages" id="chat-messages">
-                    {% for m in chat_messages %}
-                        <div class="msg">
-                            <b style="color: #58a6ff;">{{ m.username }}:</b> {{ m.content }}
+            {% block sidebar %}
+            <div class="card chat-box">
+                <div class="card-header">
+                    <h3 class="card-title">🌐 Глобальный чат</h3>
+                </div>
+                <div class="chat-messages" id="global-chat-messages">
+                    {% for msg in chat_messages %}
+                    <div class="chat-message" data-message-id="{{ msg.id }}">
+                        <div class="chat-message-avatar">
+                            {% if msg.avatar %}
+                            <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
+                            {% else %}
+                            {{ msg.username[0]|upper }}
+                            {% endif %}
                         </div>
+                        <div class="chat-message-content">
+                            <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
+                            <div class="chat-message-text">{{ msg.content }}</div>
+                        </div>
+                    </div>
                     {% else %}
-                        <p style="color: #8b949e; text-align: center; font-size: 0.8rem;">Сообщений пока нет</p>
+                    <div class="empty-state" style="padding: 2rem;">
+                        <p>Сообщений пока нет</p>
+                    </div>
                     {% endfor %}
                 </div>
-                <form class="chat-input" action="/send_chat" method="POST">
-                    <input type="text" name="content" placeholder="Написать..." required autocomplete="off">
-                    <button type="submit" class="btn">➤</button>
+                <div id="chat-cooldown" style="display: none; padding: 0.5rem 1rem; text-align: center; color: var(--warning); font-size: 0.85rem;"></div>
+                <form class="chat-input" id="global-chat-form" action="/api/global_chat" method="POST">
+                    <input type="text" name="content" id="global-chat-input" placeholder="Написать..." autocomplete="off" required>
+                    <button type="submit">➤</button>
                 </form>
             </div>
+            {% endblock %}
         </aside>
-        <script>
-            var chat = document.getElementById("chat-messages");
-            if (chat) chat.scrollTop = chat.scrollHeight;
-        </script>
         {% endif %}
     </div>
 
     <footer>
         <a href="/user_agreement">Пользовательское соглашение</a>
-        <p>&copy; 2026 MyApp. Все права защищены.</p>
+        <p>&copy; 2026 Aura Nexus. Все права защищены.</p>
     </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/reactions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/comments.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

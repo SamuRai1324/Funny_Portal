@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Пользователи - Админ-панель{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">👥 Управление пользователями</h1>
+</div>
+
+<div class="card filter-card">
+    <form method="GET" action="/admin/users" class="search-form">
+        <input type="text" name="q" value="{{ search }}" placeholder="Поиск по имени или email..." class="form-control">
+        <button type="submit" class="btn">Поиск</button>
+        {% if search %}
+        <a href="/admin/users" class="btn btn-secondary">Сбросить</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body no-padding">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Статус</th>
+                    <th>Регистрация</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <form method="POST" action="/admin/users/{{ user.id }}/role" class="role-form">
+                            <select name="role" class="form-control role-select" onchange="this.form.submit()">
+                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                <option value="moderator" {% if user.role == 'moderator' %}selected{% endif %}>Moderator</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td>
+                        {% if user.is_banned %}
+                        <span class="badge badge-danger">Забанен</span>
+                        {% else %}
+                        <span class="badge badge-success">Активен</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at[:10] }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if not user.is_banned %}
+                            <button class="btn btn-sm btn-outline" data-modal="ban-modal-{{ user.id }}">Бан</button>
+                            {% else %}
+                            <form method="POST" action="/admin/users/{{ user.id }}/unban" class="inline-form">
+                                <button type="submit" class="btn btn-sm btn-success">Разбан</button>
+                            </form>
+                            {% endif %}
+                            
+                            {% if user.role != 'admin' %}
+                            <form method="POST" action="/admin/users/{{ user.id }}/delete" class="inline-form">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить пользователя {{ user.username }}?')">Удалить</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Пользователи не найдены</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% for user in users %}
+{% if not user.is_banned and user.role != 'admin' %}
+<div class="modal-overlay" id="ban-modal-{{ user.id }}">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Забанить {{ user.username }}</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form method="POST" action="/admin/users/{{ user.id }}/ban">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Тип бана</label>
+                    <select name="ban_type" class="form-control ban-type-select" data-user-id="{{ user.id }}">
+                        <option value="temporary">Временный</option>
+                        {% if current_user.role == 'admin' %}
+                        <option value="permanent">Перманентный</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="form-group duration-group" id="duration-group-{{ user.id }}">
+                    <label class="form-label">Длительность</label>
+                    <select name="duration" class="form-control">
+                        <option value="1">1 час</option>
+                        <option value="24">24 часа</option>
+                        <option value="168">7 дней</option>
+                        <option value="720">30 дней</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Причина</label>
+                    <textarea name="reason" class="form-control" placeholder="Укажите причину бана"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                <button type="submit" class="btn btn-danger">Забанить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<style>
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.filter-card {
+    margin-bottom: 1rem;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.search-form .form-control {
+    flex: 1;
+    margin: 0;
+}
+
+.role-form {
+    margin: 0;
+}
+
+.role-select {
+    padding: 0.4rem;
+    margin: 0;
+    min-width: 120px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+</style>
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.ban-type-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+        var userId = this.getAttribute('data-user-id');
+        var durationGroup = document.getElementById('duration-group-' + userId);
+        if (durationGroup) {
+            durationGroup.style.display = this.value === 'permanent' ? 'none' : 'block';
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

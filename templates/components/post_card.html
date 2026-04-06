@@ -1,0 +1,135 @@
+<article class="post-card" id="post-{{ post.id }}">
+    <div class="post-header">
+        <a href="/profile/{{ post.username }}" class="post-avatar">
+            {% if post.avatar %}
+            <img src="{{ url_for('uploaded_file', filename=post.avatar) }}" alt="">
+            {% else %}
+            {{ post.username[0]|upper }}
+            {% endif %}
+        </a>
+        <div class="post-meta">
+            <div class="post-author">
+                <a href="/profile/{{ post.username }}">{{ post.username }}</a>
+                <span class="post-badge {{ post.post_type }}">{{ post.post_type }}</span>
+            </div>
+            <div class="post-time">
+                <span>{{ post.created_at[:16] }}</span>
+                {% if post.channel_name %}
+                <span>•</span>
+                <a href="/channel/{{ post.channel_id }}" class="post-channel">{{ post.channel_name }}</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="dropdown post-options">
+            <button class="post-options-btn">⋮</button>
+            <div class="dropdown-menu">
+                {% if current_user and (current_user.id == post.user_id or current_user.role in ['admin', 'moderator']) %}
+                <form action="/admin/posts/{{ post.id }}/delete" method="POST" style="margin: 0;">
+                    <button type="submit" class="danger" onclick="return confirm('Удалить пост?')">
+                        <span>🗑️</span> Удалить
+                    </button>
+                </form>
+                {% endif %}
+                <button data-modal="report-modal-{{ post.id }}">
+                    <span>⚠️</span> Пожаловаться
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-content">
+        {% if post.title %}
+        <h2 class="post-title">{{ post.title }}</h2>
+        {% endif %}
+        
+        {% if post.post_type == 'article' %}
+        <div class="post-text">{{ post.content|safe }}</div>
+        {% else %}
+        <div class="post-text">
+            <p>{{ post.content }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if post.post_type == 'video' and post.file_path %}
+    <div class="post-media video-preview-container">
+        <video src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls preload="metadata"></video>
+    </div>
+    {% elif post.post_type == 'photo' %}
+        {% if post.files and post.files|length > 0 %}
+        <div class="post-media">
+            <div class="post-gallery count-{{ post.files|length }}">
+                {% for file in post.files %}
+                <img src="{{ url_for('uploaded_file', filename=file.file_path) }}" alt="" loading="lazy">
+                {% endfor %}
+            </div>
+        </div>
+        {% elif post.file_path %}
+        <div class="post-media">
+            <img src="{{ url_for('uploaded_file', filename=post.file_path) }}" alt="" loading="lazy">
+        </div>
+        {% endif %}
+    {% elif post.post_type == 'audio' and post.file_path %}
+    <div class="audio-player">
+        <audio src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls></audio>
+    </div>
+    {% endif %}
+
+    <div class="post-reactions" data-post-reactions="{{ post.id }}">
+        {% set reactions_map = {'like': '👍', 'dislike': '👎', 'love': '❤️', 'laugh': '😂', 'wow': '😮', 'sad': '😢'} %}
+        {% for reaction_type in REACTION_TYPES %}
+        <button class="reaction-btn {% if post.user_reaction == reaction_type %}active{% endif %}" 
+                data-post-id="{{ post.id }}" 
+                data-reaction="{{ reaction_type }}">
+            <span class="emoji">{{ reactions_map[reaction_type] }}</span>
+            <span class="reaction-count">{% if post.reactions and post.reactions.get(reaction_type) %}{{ post.reactions[reaction_type] }}{% endif %}</span>
+        </button>
+        {% endfor %}
+    </div>
+
+    <div class="post-actions">
+        <button class="action-btn toggle-comments" data-post-id="{{ post.id }}">
+            💬 {{ post.comment_count or 0 }} комментариев
+        </button>
+    </div>
+
+    <div class="comments-section hidden" id="comments-{{ post.id }}">
+        {% if current_user %}
+        <form action="/api/comment/{{ post.id }}" method="POST" class="comment-form">
+            <input type="text" name="content" placeholder="Написать комментарий..." class="form-control">
+            <button type="submit" class="btn btn-sm">Отправить</button>
+        </form>
+        {% endif %}
+    </div>
+</article>
+
+<div class="modal-overlay" id="report-modal-{{ post.id }}">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Пожаловаться на пост</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form action="/api/report" method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="post_id" value="{{ post.id }}">
+                <div class="form-group">
+                    <label class="form-label">Причина</label>
+                    <select name="category" class="form-control" required>
+                        {% for value, label in REPORT_CATEGORIES %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Описание (необязательно)</label>
+                    <textarea name="description" class="form-control" placeholder="Опишите проблему..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                <button type="submit" class="btn btn-danger">Отправить жалобу</button>
+            </div>
+        </form>
+    </div>
+</div>

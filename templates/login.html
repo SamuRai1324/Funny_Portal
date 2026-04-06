@@ -1,17 +1,78 @@
-{% extends 'base.html' %}
-{% block title %}Вход{% endblock %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Aura Nexus</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav>
+    <a href="/" class="logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image">
+        <span>Aura Nexus</span>
+    </a>
+    <div class="nav-links" style="margin-left: auto;">
+        <a href="/" class="nav-link">
+            <span>🏠</span>
+            <span>Главная</span>
+        </a>
+        <a href="/login" class="nav-link active">
+            <span>🔑</span>
+            <span>Вход</span>
+        </a>
+        <a href="/register" class="btn btn-sm">Регистрация</a>
+    </div>
+    </nav>
 
-<div class="form-box">
-    <h1>Вход</h1>
-    <form method="POST" action="/login" novalidate>
-        <input type="text" name="username" placeholder="Логин" required>
-        <input type="password" name="password" placeholder="Пароль" required>
-        <button type="submit" class="btn btn-full">Войти</button>
-    </form>
-    <p>
-        Нет аккаунта? <a href="/register">Регистрация</a>
-    </p>
-</div>
+    <div class="layout">
+        <main class="main-content" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+            <div class="card" style="width: 100%; max-width: 400px;">
+                <div class="card-body" style="padding: 2rem;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">Вход в аккаунт</h1>
+                        <p style="color: var(--text-secondary);">Рады видеть вас снова!</p>
+                    </div>
 
-{% endblock %}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="/login">
+                        <div class="form-group">
+                            <label class="form-label">Логин</label>
+                            <input type="text" name="username" class="form-control" placeholder="Введите логин" required autofocus>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Пароль</label>
+                            <input type="password" name="password" class="form-control" placeholder="Введите пароль" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-full" style="margin-top: 1rem;">
+                            Войти
+                        </button>
+                    </form>
+
+                    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                        <p style="color: var(--text-secondary);">
+                            Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <a href="/user_agreement">Пользовательское соглашение</a>
+        <p>&copy; 2026 Aura Nexus. Все права защищены.</p>
+    </footer>
+</body>
+</html>

@@ -1,137 +1,44 @@
 {% extends 'base.html' %}
-{% block title %}Пользовательское соглашение{% endblock %}
+{% block title %}Пользовательское соглашение - Aura Nexus{% endblock %}
+
 {% block content %}
-
-<style>
-    .agreement {
-        max-width: 900px;
-        margin: 0 auto;
-        background: #161b22;
-        border-radius: 12px;
-        border: 1px solid #30363d;
-        padding: 3rem;
-    }
-
-    .agreement__title {
-        text-align: center;
-        font-size: 1.8rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #fff;
-        margin-bottom: 0.5rem;
-    }
-
-    .agreement__date {
-        text-align: center;
-        font-size: 0.9rem;
-        color: #8b949e;
-        margin-bottom: 2rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid #30363d;
-    }
-
-    .agreement__intro {
-        font-size: 1rem;
-        color: #c9d1d9;
-        margin-bottom: 2rem;
-        line-height: 1.7;
-    }
-
-    .agreement__section {
-        margin-bottom: 2rem;
-    }
-
-    .agreement__section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #58a6ff;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #30363d;
-    }
-
-    .agreement__point {
-        font-size: 0.95rem;
-        color: #c9d1d9;
-        margin-bottom: 0.8rem;
-        line-height: 1.6;
-        padding-left: 1rem;
-    }
-
-    .agreement__sublist {
-        list-style: none;
-        margin: 0.8rem 0 0.8rem 1.5rem;
-    }
-
-    .agreement__sublist li {
-        position: relative;
-        padding-left: 1.2rem;
-        margin-bottom: 0.5rem;
-        font-size: 0.95rem;
-        color: #c9d1d9;
-        line-height: 1.5;
-    }
-
-    .agreement__sublist li::before {
-        content: "•";
-        position: absolute;
-        left: 0;
-        color: #58a6ff;
-        font-weight: bold;
-    }
-
-    .agreement__footer {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #30363d;
-        text-align: center;
-    }
-
-    .agreement__footer a {
-        color: #58a6ff;
-    }
-</style>
-
 <div class="agreement">
-    <h1 class="agreement__title">Пользовательское соглашение</h1>
-    <p class="agreement__date">Дата последнего обновления: 15.01.2026</p>
+    <h1 class="agreement-title">Пользовательское соглашение</h1>
+    <p class="agreement-date">Дата последнего обновления: 15.01.2026</p>
 
-    <p class="agreement__intro">
+    <p class="agreement-intro">
         Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между 
-        Администрацией веб-сервиса <strong>MyApp</strong> (далее — «Сервис», «Платформа») и 
+        Администрацией веб-сервиса <strong>Aura Nexus</strong> (далее — «Сервис», «Платформа») и 
         физическим лицом (далее — «Пользователь»), использующим функциональные возможности Сервиса.
         Регистрация на Платформе означает полное и безоговорочное принятие настоящего Соглашения.
     </p>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">1. Общие положения</h2>
-        <p class="agreement__point">1.1. Сервис MyApp представляет собой социальную платформу, предоставляющую возможности для публикации контента, общения, обмена информацией и взаимодействия между пользователями.</p>
-        <p class="agreement__point">1.2. Использование Сервиса допускается только при условии согласия с настоящим Соглашением. Если Пользователь не согласен с условиями, он обязан немедленно прекратить использование Сервиса.</p>
-        <p class="agreement__point">1.3. Администрация оставляет за собой право изменять условия Соглашения без предварительного уведомления. Актуальная версия всегда доступна на данной странице.</p>
-        <p class="agreement__point">1.4. Продолжение использования Сервиса после внесения изменений означает согласие Пользователя с новой редакцией Соглашения.</p>
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">1. Общие положения</h2>
+        <p class="agreement-point">1.1. Сервис Aura Nexus представляет собой социальную платформу, предоставляющую возможности для публикации контента, общения, обмена информацией и взаимодействия между пользователями.</p>
+        <p class="agreement-point">1.2. Использование Сервиса допускается только при условии согласия с настоящим Соглашением. Если Пользователь не согласен с условиями, он обязан немедленно прекратить использование Сервиса.</p>
+        <p class="agreement-point">1.3. Администрация оставляет за собой право изменять условия Соглашения без предварительного уведомления. Актуальная версия всегда доступна на данной странице.</p>
+        <p class="agreement-point">1.4. Продолжение использования Сервиса после внесения изменений означает согласие Пользователя с новой редакцией Соглашения.</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">2. Регистрация и учетная запись</h2>
-        <p class="agreement__point">2.1. Для доступа к полному функционалу Сервиса необходима регистрация с указанием достоверных данных.</p>
-        <p class="agreement__point">2.2. Пользователь несет полную ответственность за:</p>
-        <ul class="agreement__sublist">
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">2. Регистрация и учетная запись</h2>
+        <p class="agreement-point">2.1. Для доступа к полному функционалу Сервиса необходима регистрация с указанием достоверных данных.</p>
+        <p class="agreement-point">2.2. Пользователь несет полную ответственность за:</p>
+        <ul class="agreement-list">
             <li>Сохранность и конфиденциальность логина и пароля</li>
             <li>Все действия, совершенные под его учетной записью</li>
             <li>Достоверность предоставленной информации</li>
         </ul>
-        <p class="agreement__point">2.3. Один пользователь может иметь только одну учетную запись. Создание мультиаккаунтов запрещено.</p>
-        <p class="agreement__point">2.4. Администрация вправе заблокировать или удалить учетную запись без объяснения причин при нарушении условий Соглашения.</p>
+        <p class="agreement-point">2.3. Один пользователь может иметь только одну учетную запись. Создание мультиаккаунтов запрещено.</p>
+        <p class="agreement-point">2.4. Администрация вправе заблокировать или удалить учетную запись без объяснения причин при нарушении условий Соглашения.</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">3. Правила использования Сервиса</h2>
-        <p class="agreement__point">3.1. Пользователь обязуется использовать Сервис добросовестно и в соответствии с его назначением.</p>
-        <p class="agreement__point">3.2. При использовании Сервиса запрещается:</p>
-        <ul class="agreement__sublist">
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">3. Правила использования Сервиса</h2>
+        <p class="agreement-point">3.1. Пользователь обязуется использовать Сервис добросовестно и в соответствии с его назначением.</p>
+        <p class="agreement-point">3.2. При использовании Сервиса запрещается:</p>
+        <ul class="agreement-list">
             <li>Публикация контента, нарушающего законодательство Российской Федерации</li>
             <li>Размещение материалов экстремистского, порнографического или насильственного характера</li>
             <li>Оскорбления, травля, дискриминация других пользователей</li>
@@ -142,80 +49,214 @@
             <li>Использование автоматизированных средств для взаимодействия с Сервисом</li>
             <li>Любые действия, нарушающие работоспособность Сервиса</li>
         </ul>
-        <p class="agreement__point">3.3. Администрация вправе удалять любой контент без предварительного уведомления и объяснения причин.</p>
+        <p class="agreement-point">3.3. Администрация вправе удалять любой контент без предварительного уведомления и объяснения причин.</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">4. Публикация контента</h2>
-        <p class="agreement__point">4.1. Пользователь может публиковать текстовые записи, видеоматериалы, комментарии и создавать каналы в соответствии с функционалом Сервиса.</p>
-        <p class="agreement__point">4.2. Публикуя контент, Пользователь подтверждает наличие всех необходимых прав на данный контент.</p>
-        <p class="agreement__point">4.3. Пользователь предоставляет Администрации неисключительную безвозмездную лицензию на хранение, отображение и распространение опубликованного контента в рамках функционала Сервиса.</p>
-        <p class="agreement__point">4.4. Администрация не несет ответственности за содержание пользовательского контента.</p>
-    </div>
-
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">5. Система коммуникации</h2>
-        <p class="agreement__point">5.1. Сервис предоставляет функционал общего чата и системы комментариев для коммуникации между пользователями.</p>
-        <p class="agreement__point">5.2. Все сообщения в общем чате являются публичными и доступны всем авторизованным пользователям.</p>
-        <p class="agreement__point">5.3. Администрация не осуществляет предварительную модерацию сообщений, но оставляет за собой право удалять контент, нарушающий правила Сервиса.</p>
-        <p class="agreement__point">5.4. Запрещается использование системы коммуникации для спама, мошенничества и иных противоправных действий.</p>
-    </div>
-
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">6. Интеллектуальная собственность</h2>
-        <p class="agreement__point">6.1. Все элементы Сервиса, включая дизайн, логотипы, программный код и базы данных, являются интеллектуальной собственностью Администрации.</p>
-        <p class="agreement__point">6.2. Копирование, модификация или распространение элементов Сервиса без письменного согласия Администрации запрещено.</p>
-        <p class="agreement__point">6.3. Пользователь сохраняет авторские права на созданный им контент.</p>
-    </div>
-
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">7. Конфиденциальность и персональные данные</h2>
-        <p class="agreement__point">7.1. Администрация собирает и обрабатывает персональные данные Пользователей в соответствии с требованиями Федерального закона № 152-ФЗ «О персональных данных».</p>
-        <p class="agreement__point">7.2. Собираемые данные включают:</p>
-        <ul class="agreement__sublist">
-            <li>Логин и адрес электронной почты</li>
-            <li>Данные об активности на Сервисе</li>
-            <li>Техническая информация о подключении</li>
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">4. Типы публикуемого контента</h2>
+        <p class="agreement-point">4.1. Пользователь может публиковать следующие типы контента:</p>
+        <ul class="agreement-list">
+            <li>Текстовые посты и статьи</li>
+            <li>Фотографии и изображения (до 10 на публикацию)</li>
+            <li>Видеозаписи (до 100 МБ)</li>
+            <li>Аудиозаписи (до 30 МБ)</li>
+            <li>Истории (исчезают через 24 часа, затем архивируются)</li>
         </ul>
-        <p class="agreement__point">7.3. Персональные данные не передаются третьим лицам за исключением случаев, предусмотренных законодательством.</p>
-        <p class="agreement__point">7.4. Пользователь вправе запросить удаление своих персональных данных, направив запрос Администрации.</p>
+        <p class="agreement-point">4.2. Публикуя контент, Пользователь подтверждает наличие всех необходимых прав на данный контент.</p>
+        <p class="agreement-point">4.3. Пользователь предоставляет Администрации неисключительную безвозмездную лицензию на хранение, отображение и распространение опубликованного контента в рамках функционала Сервиса.</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">8. Ограничение ответственности</h2>
-        <p class="agreement__point">8.1. Сервис предоставляется по принципу «как есть» (as is). Администрация не гарантирует бесперебойную работу Сервиса.</p>
-        <p class="agreement__point">8.2. Администрация не несет ответственности за:</p>
-        <ul class="agreement__sublist">
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">5. Каналы и сообщества</h2>
+        <p class="agreement-point">5.1. Пользователи могут создавать тематические каналы для публикации контента.</p>
+        <p class="agreement-point">5.2. Создатель канала несет ответственность за публикуемый в нём контент.</p>
+        <p class="agreement-point">5.3. Администрация вправе удалить канал при систематическом нарушении правил Сервиса.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">6. Система коммуникации</h2>
+        <p class="agreement-point">6.1. Сервис предоставляет функционал глобального чата, личных сообщений и системы комментариев.</p>
+        <p class="agreement-point">6.2. Все сообщения в глобальном чате являются публичными.</p>
+        <p class="agreement-point">6.3. Действует система защиты от спама: при отправке более 3 сообщений за 5 секунд чат блокируется на 20 секунд.</p>
+        <p class="agreement-point">6.4. Запрещается использование системы коммуникации для спама, мошенничества и иных противоправных действий.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">7. Система реакций и оценок</h2>
+        <p class="agreement-point">7.1. Пользователи могут оценивать контент с помощью системы реакций.</p>
+        <p class="agreement-point">7.2. Доступные типы реакций: лайк, дизлайк, люблю, смешно, удивлён, грустно.</p>
+        <p class="agreement-point">7.3. Пользователь может поставить только одну реакцию на публикацию.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">8. Система жалоб и модерация</h2>
+        <p class="agreement-point">8.1. Пользователи могут подавать жалобы на контент, нарушающий правила Сервиса.</p>
+        <p class="agreement-point">8.2. Категории жалоб: спам, оскорбления, контент 18+, нарушение правил, другое.</p>
+        <p class="agreement-point">8.3. Жалобы рассматриваются модераторами и администраторами Сервиса.</p>
+        <p class="agreement-point">8.4. Решение по жалобе является окончательным.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">9. Роли пользователей</h2>
+        <p class="agreement-point">9.1. На Сервисе действует система ролей:</p>
+        <ul class="agreement-list">
+            <li><strong>Пользователь (user)</strong> — базовые права: публикация контента, комментарии, реакции, личные сообщения</li>
+            <li><strong>Модератор (moderator)</strong> — дополнительно: удаление контента, обработка жалоб, временные баны</li>
+            <li><strong>Администратор (admin)</strong> — полный контроль: управление ролями, перманентные баны, удаление пользователей и каналов</li>
+        </ul>
+        <p class="agreement-point">9.2. Роль присваивается Администрацией.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">10. Блокировки (баны)</h2>
+        <p class="agreement-point">10.1. За нарушение правил Сервиса пользователь может быть заблокирован.</p>
+        <p class="agreement-point">10.2. Виды блокировок:</p>
+        <ul class="agreement-list">
+            <li><strong>Временная</strong> — на определённый срок (от 1 часа до 30 дней)</li>
+            <li><strong>Перманентная</strong> — бессрочная, выдаётся только администратором</li>
+        </ul>
+        <p class="agreement-point">10.3. Заблокированный пользователь не может войти в аккаунт до истечения срока блокировки.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">11. Интеллектуальная собственность</h2>
+        <p class="agreement-point">11.1. Все элементы Сервиса, включая дизайн, логотипы, программный код и базы данных, являются интеллектуальной собственностью Администрации.</p>
+        <p class="agreement-point">11.2. Копирование, модификация или распространение элементов Сервиса без письменного согласия Администрации запрещено.</p>
+        <p class="agreement-point">11.3. Пользователь сохраняет авторские права на созданный им контент.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">12. Конфиденциальность</h2>
+        <p class="agreement-point">12.1. Администрация собирает и обрабатывает персональные данные в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».</p>
+        <p class="agreement-point">12.2. Собираемые данные: логин, email, данные об активности, техническая информация.</p>
+        <p class="agreement-point">12.3. Персональные данные не передаются третьим лицам за исключением случаев, предусмотренных законодательством.</p>
+        <p class="agreement-point">12.4. Пользователь вправе запросить удаление своих данных через настройки аккаунта.</p>
+    </div>
+
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">13. Ограничение ответственности</h2>
+        <p class="agreement-point">13.1. Сервис предоставляется по принципу «как есть» (as is).</p>
+        <p class="agreement-point">13.2. Администрация не несет ответственности за:</p>
+        <ul class="agreement-list">
             <li>Временную недоступность Сервиса</li>
             <li>Утрату данных Пользователя</li>
             <li>Действия третьих лиц</li>
-            <li>Содержание внешних ресурсов, на которые ведут ссылки</li>
+            <li>Содержание пользовательского контента</li>
             <li>Убытки, возникшие в результате использования Сервиса</li>
         </ul>
-        <p class="agreement__point">8.3. Максимальная ответственность Администрации ограничивается суммой, уплаченной Пользователем за использование Сервиса (при наличии платных услуг).</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">9. Разрешение споров</h2>
-        <p class="agreement__point">9.1. Все споры и разногласия подлежат разрешению путем переговоров.</p>
-        <p class="agreement__point">9.2. При невозможности достижения согласия спор передается на рассмотрение в суд по месту нахождения Администрации в соответствии с законодательством Российской Федерации.</p>
-        <p class="agreement__point">9.3. Претензионный порядок является обязательным. Срок рассмотрения претензии составляет 30 (тридцать) календарных дней.</p>
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">14. Разрешение споров</h2>
+        <p class="agreement-point">14.1. Все споры разрешаются путем переговоров.</p>
+        <p class="agreement-point">14.2. При невозможности достижения согласия спор передается в суд по месту нахождения Администрации.</p>
+        <p class="agreement-point">14.3. Претензионный порядок обязателен. Срок рассмотрения — 30 дней.</p>
     </div>
 
-    <div class="agreement__section">
-        <h2 class="agreement__section-title">10. Заключительные положения</h2>
-        <p class="agreement__point">10.1. Настоящее Соглашение вступает в силу с момента регистрации Пользователя и действует бессрочно.</p>
-        <p class="agreement__point">10.2. Признание отдельных положений Соглашения недействительными не влечет недействительности остальных положений.</p>
-        <p class="agreement__point">10.3. Бездействие Администрации при нарушении Соглашения не лишает её права предпринять соответствующие действия позднее.</p>
-        <p class="agreement__point">10.4. По всем вопросам, не урегулированным Соглашением, стороны руководствуются действующим законодательством Российской Федерации.</p>
+    <div class="agreement-section">
+        <h2 class="agreement-section-title">15. Заключительные положения</h2>
+        <p class="agreement-point">15.1. Соглашение вступает в силу с момента регистрации и действует бессрочно.</p>
+        <p class="agreement-point">15.2. Признание отдельных положений недействительными не влечет недействительности остальных.</p>
+        <p class="agreement-point">15.3. По неурегулированным вопросам стороны руководствуются законодательством РФ.</p>
     </div>
 
-    <div class="agreement__footer">
-        <p style="color: #8b949e; margin-bottom: 1rem;">
-            Используя Сервис MyApp, вы подтверждаете, что прочитали, поняли и согласны с условиями данного Соглашения.
-        </p>
-        <a href="/">← Вернуться на главную</a>
+    <div class="agreement-footer">
+        <p>Используя Сервис Aura Nexus, вы подтверждаете, что прочитали, поняли и согласны с условиями данного Соглашения.</p>
+        <a href="/" class="btn">← Вернуться на главную</a>
     </div>
 </div>
 
+<style>
+.agreement {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    padding: 3rem;
+}
+
+.agreement-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.agreement-date {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.agreement-intro {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.7;
+}
+
+.agreement-section {
+    margin-bottom: 2rem;
+}
+
+.agreement-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent-secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.agreement-point {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+    padding-left: 1rem;
+}
+
+.agreement-list {
+    list-style: none;
+    margin: 0.8rem 0 0.8rem 1.5rem;
+}
+
+.agreement-list li {
+    position: relative;
+    padding-left: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.agreement-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--accent-secondary);
+    font-weight: bold;
+}
+
+.agreement-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.agreement-footer p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+</style>
 {% endblock %}
