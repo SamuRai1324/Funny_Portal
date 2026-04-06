@@ -1,44 +1,17 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Вход</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <nav>
-        <div class="nav-left">
-            <a href="/" class="logo">MyApp</a>
-        </div>
-        <div class="nav-right nav-links">
-            <a href="/">Главная</a>
-            <a href="/login">Вход</a>
-            <a href="/register">Регистрация</a>
-        </div>
-    </nav>
+{% extends 'base.html' %}
+{% block title %}Вход{% endblock %}
+{% block content %}
 
-    <div class="layout-container">
-        <main class="content">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for cat, msg in messages %}
-                        <div class="alert {{ cat }}">{{ msg }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+<div class="form-box">
+    <h1>Вход</h1>
+    <form method="POST" action="/login" novalidate>
+        <input type="text" name="username" placeholder="Логин" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+        <button type="submit" class="btn btn-full">Войти</button>
+    </form>
+    <p>
+        Нет аккаунта? <a href="/register">Регистрация</a>
+    </p>
+</div>
 
-            <div class="form-box">
-                <h1>Вход</h1>
-                <form method="POST" action="/login" novalidate>
-                    <input type="text" name="login" placeholder="Логин или email">
-                    <input type="password" name="password" placeholder="Пароль">
-                    <button type="submit" class="btn" style="width:100%;">Войти</button>
-                </form>
-                <p style="text-align:center; margin-top:15px;">
-                    Нет аккаунта? <a href="/register">Регистрация</a>
-                </p>
-            </div>
-        </main>
-    </div>
-</body>
-</html>
+{% endblock %}

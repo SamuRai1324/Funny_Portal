@@ -2,117 +2,130 @@
 {% block title %}Главная{% endblock %}
 {% block content %}
 
+{% macro render_comments(parent_id, post_id) %}
+    {% if comments_dict.get(parent_id) %}
+        <div class="comment-thread">
+        {% for c in comments_dict[parent_id] %}
+            <div class="comment-box">
+                <b style="color: #8b949e;">{{ c.username }}</b>
+                <span style="font-size: 0.7rem; color: #444;">{{ c.created_at[:16] }}</span>
+                <br>
+                {{ c.content }}
+                <details style="padding: 0.5rem; border: none; background: transparent; margin-top: 5px;">
+                    <summary style="font-size: 0.8rem; color: #8b949e; margin: 0;">Ответить</summary>
+                    <form action="/add_comment/{{ post_id }}" method="POST" style="margin-top: 5px; display: flex; gap: 5px;">
+                        <input type="hidden" name="parent_id" value="{{ c.id }}">
+                        <input type="text" name="content" placeholder="Ваш ответ..." required class="input-small" style="margin: 0;">
+                        <button type="submit" class="btn-small">✓</button>
+                    </form>
+                </details>
+                {{ render_comments(c.id, post_id) }}
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}
+
 {% if current_user %}
     <div class="feed-tabs">
-        <a href="/?tab=all" class="tab {% if current_tab == 'all' %}active{% endif %}">Всё подряд</a>
+        <a href="/?tab=all" class="tab {% if current_tab == 'all' and not request.args.get('q') %}active{% endif %}">Все посты</a>
+        <a href="/?tab=text" class="tab {% if current_tab == 'text' %}active{% endif %}">Новости</a>
+        <a href="/?tab=video" class="tab {% if current_tab == 'video' %}active{% endif %}">Видео</a>
+        <a href="/?tab=short" class="tab {% if current_tab == 'short' %}active{% endif %}">Shorts</a>
         <a href="/?tab=channels" class="tab {% if current_tab == 'channels' %}active{% endif %}">Каналы</a>
-        <a href="/?tab=videos" class="tab {% if current_tab == 'videos' %}active{% endif %}">Видео</a>
-        <a href="/?tab=shorts" class="tab {% if current_tab == 'shorts' %}active{% endif %}">Короткие видео</a>
-        <a href="/?tab=news" class="tab {% if current_tab == 'news' %}active{% endif %}">Новости</a>
-        <button onclick="document.getElementById('modal-post').style.display='block'" class="tab tab-create">+ Запись</button>
-        <button onclick="document.getElementById('modal-channel').style.display='block'" class="tab tab-create">+ Сообщество</button>
     </div>
 
-    <div id="modal-post" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-post').style.display='none'">&times;</span>
-            <h2>Создать публикацию</h2>
-            <form action="/create_post" method="POST">
-                <select name="post_type" style="width:100%;padding:0.8rem;margin-bottom:1rem;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;">
-                    <option value="text">Текст / Новость</option>
-                    <option value="video">Видео</option>
-                    <option value="short">Короткое видео</option>
-                </select>
-                {% if my_channels %}
-                <select name="channel_id" style="width:100%;padding:0.8rem;margin-bottom:1rem;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;">
-                    <option value="">От своего имени</option>
-                    {% for c in my_channels %}
-                        <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
-                <input type="text" name="title" placeholder="Заголовок">
-                <input type="text" name="media_url" placeholder="Ссылка на видео">
-                <textarea name="content" placeholder="Текст..." style="width:100%;height:100px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:1rem;margin-bottom:1rem;"></textarea>
-                <button type="submit" class="btn">Опубликовать</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-channel" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-channel').style.display='none'">&times;</span>
-            <h2>Создать сообщество</h2>
-            <form action="/create_channel" method="POST">
-                <input type="text" name="name" placeholder="Название">
-                <textarea name="description" placeholder="Описание..." style="width:100%;height:100px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:1rem;margin-bottom:1rem;"></textarea>
-                <button type="submit" class="btn">Создать</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="feed-container">
-        {% if current_tab == 'channels' %}
-            {% for channel in channels %}
-            <div class="feed-block" style="display:flex;justify-content:space-between;align-items:center;">
+    {% if request.args.get('q') %}
+        <h3 style="margin-bottom: 1rem;">
+            Результаты поиска: "{{ request.args.get('q') }}"
+            <a href="/" style="font-size: 0.9rem;">(Сбросить)</a>
+        </h3>
+    {% else %}
+        <details class="box" style="border: 1px dashed #58a6ff;">
+            <summary>➕ Создать публикацию или канал</summary>
+            <div class="flex-form">
                 <div>
-                    <h3 style="color:#58a6ff;">{{ channel.name }}</h3>
-                    <p style="color:#8b949e;">{{ channel.description }}</p>
-                    <small>Создатель: {{ channel.creator_name }}</small>
+                    <h4 style="margin-bottom: 1rem;">Новый пост</h4>
+                    <form action="/create_post" method="POST">
+                        <select name="post_type">
+                            <option value="text">Новость (Текст)</option>
+                            <option value="video">Видео</option>
+                            <option value="short">Shorts</option>
+                        </select>
+                        <input type="text" name="title" placeholder="Заголовок">
+                        <textarea name="content" placeholder="Описание..." required class="fixed-height"></textarea>
+                        <button type="submit" class="btn btn-full">Опубликовать</button>
+                    </form>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 1rem;">Новый канал</h4>
+                    <form action="/create_channel" method="POST">
+                        <input type="text" name="name" placeholder="Название канала" required>
+                        <textarea name="description" placeholder="Описание канала..." required class="fixed-height"></textarea>
+                        <button type="submit" class="btn btn-full">Создать канал</button>
+                    </form>
                 </div>
             </div>
-            {% else %}
-            <p style="text-align:center;color:#8b949e;padding:3rem;">Пока нет сообществ.</p>
-            {% endfor %}
+        </details>
+    {% endif %}
+
+    {% if current_tab == 'channels' and not request.args.get('q') %}
+        {% for c in channels %}
+            <div class="box">
+                <h4 style="color: #58a6ff; font-size: 1.4rem;">{{ c.name }}</h4>
+                <p style="color: #8b949e; margin-top: 5px;">{{ c.description }}</p>
+                <small style="color: #444;">Создатель: {{ c.creator_name or 'Неизвестно' }}</small>
+            </div>
         {% else %}
-            {% for post in posts %}
-            <div class="feed-block">
+            <p class="center" style="color: #8b949e;">Каналов пока нет.</p>
+        {% endfor %}
+    {% else %}
+        {% for p in posts %}
+            <div class="box">
                 <div class="block-header">
-                    <div class="avatar">{{ post.username[0]|upper }}</div>
+                    <div class="avatar">{{ p.username[0]|upper }}</div>
                     <div class="block-info">
-                        <span class="block-author">{{ post.username }}</span>
-                        <span class="block-time">{{ post.created_at[:16] }}</span>
+                        <span class="block-author">{{ p.username }}</span>
+                        <span class="block-time">{{ p.created_at[:16] }}</span>
                     </div>
+                    <span class="post-type-badge">{{ p.post_type }}</span>
                 </div>
-                <div class="block-content">
-                    {% if post.title %}<h3>{{ post.title }}</h3>{% endif %}
-                    <p>{{ post.content }}</p>
+                
+                {% if p.title %}
+                    <h3 style="margin-bottom: 10px;">{{ p.title }}</h3>
+                {% endif %}
+                <p style="line-height: 1.6;">{{ p.content }}</p>
+
+                <div style="margin-top: 15px; display: flex; gap: 10px; border-top: 1px solid #30363d; padding-top: 10px;">
+                    <form action="/repost/{{ p.id }}" method="POST" style="margin: 0;">
+                        <button type="submit" class="action-btn">↪️ В чат</button>
+                    </form>
                 </div>
-                <div class="block-footer">
-                    <button class="action-btn like-btn" data-post-id="{{ post.id }}" style="color:{{ '#da3633' if post.user_liked else '#8b949e' }}">
-                        ❤️ <span id="likes-count-{{ post.id }}">{{ post.likes_count }}</span>
-                    </button>
-                    <button class="action-btn">💬 Комментировать</button>
-                </div>
+
+                <details>
+                    <summary>💬 Комментарии</summary>
+                    <form action="/add_comment/{{ p.id }}" method="POST" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="hidden" name="parent_id" value="0">
+                        <input type="text" name="content" placeholder="Написать комментарий..." required style="margin: 0;">
+                        <button type="submit" class="btn">Отправить</button>
+                    </form>
+                    {{ render_comments(0, p.id) }}
+                </details>
             </div>
-            {% else %}
-            <p style="text-align:center;color:#8b949e;padding:3rem;">Пока ничего нет.</p>
-            {% endfor %}
-        {% endif %}
-    </div>
+        {% else %}
+            <p class="center" style="color: #8b949e;">Постов не найдено.</p>
+        {% endfor %}
+    {% endif %}
 
 {% else %}
     <div class="center">
-        <h1>Добро пожаловать в MyApp</h1>
-        <p>Присоединяйтесь!</p>
-        <div style="margin-top:2rem;">
-            <a href="/register" class="btn">Создать аккаунт</a>
-            <a href="/login" class="btn btn-outline">Войти</a>
+        <h1>Добро пожаловать в MyApp!</h1>
+        <p style="color: #8b949e; margin: 20px 0;">Войдите или зарегистрируйтесь, чтобы видеть ленту и писать в чат.</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <a href="/login" class="btn">Войти в аккаунт</a>
+            <a href="/register" class="btn btn-outline">Создать аккаунт</a>
         </div>
     </div>
 {% endif %}
 
-<script>
-document.querySelectorAll('.like-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-        const postId = this.getAttribute('data-post-id');
-        const response = await fetch('/like/' + postId, { method: 'POST' });
-        if(response.ok) {
-            const data = await response.json();
-            document.getElementById('likes-count-' + postId).innerText = data.likes_count;
-            this.style.color = data.action === 'liked' ? '#da3633' : '#8b949e';
-        }
-    });
-});
-</script>
 {% endblock %}

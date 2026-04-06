@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyApp{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -11,14 +12,15 @@
             <a href="/" class="logo">MyApp</a>
         </div>
         <div class="nav-center">
-            <div class="search-bar">
-                <input type="text" placeholder="Поиск...">
-                <button>🔍</button>
-            </div>
+            <form class="search-bar" action="/" method="GET">
+                <input type="text" name="q" placeholder="Поиск постов..." value="{{ request.args.get('q', '') }}">
+                <button type="submit">🔍</button>
+            </form>
         </div>
         <div class="nav-right nav-links">
             <a href="/">Главная</a>
             {% if current_user %}
+                <span style="color: #8b949e;">{{ current_user.username }}</span>
                 <a href="/logout" style="color: #da3633;">Выйти</a>
             {% else %}
                 <a href="/login">Вход</a>
@@ -41,18 +43,33 @@
 
         {% if current_user %}
         <aside class="sidebar">
-            <div class="messenger-box">
-                <div class="messenger-header">Чат (Beta)</div>
-                <div class="messenger-messages">
-                    <p class="sys-msg">Чат в разработке</p>
+            <div class="chat-box">
+                <div class="chat-header">🌐 Общий чат</div>
+                <div class="chat-messages" id="chat-messages">
+                    {% for m in chat_messages %}
+                        <div class="msg">
+                            <b style="color: #58a6ff;">{{ m.username }}:</b> {{ m.content }}
+                        </div>
+                    {% else %}
+                        <p style="color: #8b949e; text-align: center; font-size: 0.8rem;">Сообщений пока нет</p>
+                    {% endfor %}
                 </div>
-                <div class="messenger-input">
-                    <input type="text" placeholder="Сообщение..." disabled>
-                    <button class="btn" disabled>></button>
-                </div>
+                <form class="chat-input" action="/send_chat" method="POST">
+                    <input type="text" name="content" placeholder="Написать..." required autocomplete="off">
+                    <button type="submit" class="btn">➤</button>
+                </form>
             </div>
         </aside>
+        <script>
+            var chat = document.getElementById("chat-messages");
+            if (chat) chat.scrollTop = chat.scrollHeight;
+        </script>
         {% endif %}
     </div>
+
+    <footer>
+        <a href="/user_agreement">Пользовательское соглашение</a>
+        <p>&copy; 2026 MyApp. Все права защищены.</p>
+    </footer>
 </body>
 </html>

@@ -1,5 +1,10 @@
-# Default ignored files
 /shelf/
 /workspace.xml
-# Editor-based HTTP Client requests
 /httpRequests/
+.idea
+.venv
+__pycache__
+*.pyc
+*.db
+*.sqlite
+.DS_Store
