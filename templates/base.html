@@ -34,10 +34,10 @@
     </div>
     {% endif %}
 
-    <nav>
+<nav>
     <a href="/" class="logo">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image">
-        <span>Aura Nexus</span>
+        <!-- <span>Aura Nexus</span> -->
     </a>
 
     <div class="search-container">
@@ -59,7 +59,9 @@
         
         {% if current_user %}
         <a href="/messages" class="nav-link {% if '/messages' in request.path %}active{% endif %}">
-            <span>✉️</span>
+            <span class="nav-link-icon">
+                <img src="{{ url_for('static', filename='images/messenger.png') }}" alt="Сообщения">
+            </span>
             <span>Сообщения</span>
             {% if message_count > 0 %}
             <span class="badge">{{ message_count }}</span>

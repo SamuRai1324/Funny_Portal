@@ -1,4 +1,4 @@
-<article class="post-card" id="post-{{ post.id }}">
+<article class="post-card" id="post-{{ post.id }}" data-type="{{ post.post_type }}">
     <div class="post-header">
         <a href="/profile/{{ post.username }}" class="post-avatar">
             {% if post.avatar %}
@@ -44,11 +44,20 @@
         {% endif %}
         
         {% if post.post_type == 'article' %}
-        <div class="post-text">{{ post.content|safe }}</div>
+        <!-- Статья - показываем превью -->
+        <div class="post-text truncated" data-full-text="true">
+            {{ post.content|safe }}
+        </div>
+        <button class="read-more-btn" data-post-id="{{ post.id }}">Читать далее ↓</button>
         {% else %}
-        <div class="post-text">
+        <!-- Обычный пост -->
+        <div class="post-text {% if post.content and post.content|length > 500 %}truncated{% endif %}" 
+             {% if post.content and post.content|length > 500 %}data-full-text="true"{% endif %}>
             <p>{{ post.content }}</p>
         </div>
+        {% if post.content and post.content|length > 500 %}
+        <button class="read-more-btn" data-post-id="{{ post.id }}">Читать далее ↓</button>
+        {% endif %}
         {% endif %}
     </div>
 

@@ -273,6 +273,32 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+// ===== ЧИТАТЬ ДАЛЕЕ / СВЕРНУТЬ =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопок "Читать далее"
+    document.querySelectorAll('.read-more-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const postCard = this.closest('.post-card');
+            const postText = postCard.querySelector('.post-text');
+            
+            if (postText.classList.contains('truncated')) {
+                // Раскрываем текст
+                postText.classList.remove('truncated');
+                postText.classList.add('expanded');
+                this.textContent = 'Свернуть ↑';
+            } else {
+                // Сворачиваем текст
+                postText.classList.add('truncated');
+                postText.classList.remove('expanded');
+                this.textContent = 'Читать далее ↓';
+                
+                // Скроллим к посту чтобы он был виден
+                postCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    });
+});
+
 function confirmAction(message) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');

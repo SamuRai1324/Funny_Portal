@@ -38,43 +38,11 @@
         <a href="/?tab=audio" class="tab {% if current_tab == 'audio' %}active{% endif %}">Аудио</a>
         <a href="/?tab=article" class="tab {% if current_tab == 'article' %}active{% endif %}">Статьи</a>
         
-        <div class="create-dropdown">
-            <button class="create-btn">
-                <span>+</span>
-                <span>Создать</span>
-            </button>
-            <div class="create-menu">
-                <a href="/create/post">
-                    <span class="create-menu-icon">📝</span>
-                    <span>Текстовый пост</span>
-                </a>
-                <a href="/create/video">
-                    <span class="create-menu-icon">📹</span>
-                    <span>Видео</span>
-                </a>
-                <a href="/create/photo">
-                    <span class="create-menu-icon">🖼️</span>
-                    <span>Фото</span>
-                </a>
-                <a href="/create/audio">
-                    <span class="create-menu-icon">🎵</span>
-                    <span>Аудио</span>
-                </a>
-                <a href="/create/article">
-                    <span class="create-menu-icon">📄</span>
-                    <span>Статья</span>
-                </a>
-                <a href="/create/story">
-                    <span class="create-menu-icon">⏱️</span>
-                    <span>История</span>
-                </a>
-                <div class="dropdown-divider"></div>
-                <a href="/channel/create">
-                    <span class="create-menu-icon">📺</span>
-                    <span>Создать канал</span>
-                </a>
-            </div>
-        </div>
+        <!-- Кнопка открытия модального окна -->
+        <button class="create-btn" id="open-create-modal">
+            <span>+</span>
+            <span>Создать</span>
+        </button>
     </div>
 
     {% if search_query %}
@@ -128,6 +96,74 @@
             <p>Чаты и комментарии</p>
         </div>
     </div>
+{% endif %}
+
+<!-- МОДАЛЬНОЕ ОКНО "СОЗДАТЬ" -->
+{% if current_user %}
+<div class="modal-overlay" id="create-modal">
+    <div class="modal create-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">✨ Создать публикацию</h3>
+            <button class="modal-close" id="close-create-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="create-options">
+                <a href="/create/post" class="create-option">
+                    <div class="create-option-icon">📝</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Текстовый пост</span>
+                        <span class="create-option-desc">Поделитесь мыслями</span>
+                    </div>
+                </a>
+                <a href="/create/video" class="create-option">
+                    <div class="create-option-icon">📹</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Видео</span>
+                        <span class="create-option-desc">Загрузите видеоролик</span>
+                    </div>
+                </a>
+                <a href="/create/photo" class="create-option">
+                    <div class="create-option-icon">🖼️</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Фото</span>
+                        <span class="create-option-desc">Опубликуйте изображения</span>
+                    </div>
+                </a>
+                <a href="/create/audio" class="create-option">
+                    <div class="create-option-icon">🎵</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Аудио</span>
+                        <span class="create-option-desc">Поделитесь музыкой</span>
+                    </div>
+                </a>
+                <a href="/create/article" class="create-option">
+                    <div class="create-option-icon">📄</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Статья</span>
+                        <span class="create-option-desc">Напишите лонгрид</span>
+                    </div>
+                </a>
+                <a href="/create/story" class="create-option">
+                    <div class="create-option-icon">⏱️</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">История</span>
+                        <span class="create-option-desc">Исчезнет через 24 часа</span>
+                    </div>
+                </a>
+                
+                <div class="create-divider"></div>
+                
+                <a href="/channel/create" class="create-option create-option-channel">
+                    <div class="create-option-icon">📺</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Создать канал</span>
+                        <span class="create-option-desc">Ваше сообщество</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <style>
@@ -197,5 +233,121 @@
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
+
+/* ===== МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ===== */
+.create-modal {
+    max-width: 450px;
+    width: 95%;
+}
+
+.create-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.create-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+.create-option:hover {
+    background: var(--bg-primary);
+    border-color: var(--accent-purple);
+    transform: translateX(5px);
+}
+
+.create-option-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-md);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.create-option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.create-option-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.create-option-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.create-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.75rem 0;
+}
+
+.create-option-channel .create-option-icon {
+    background: var(--accent-gradient-reverse);
+}
+
+/* Кнопка создать в табах */
+.tabs .create-btn {
+    margin-left: auto;
+}
 </style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Модальное окно "Создать"
+document.addEventListener('DOMContentLoaded', function() {
+    const openBtn = document.getElementById('open-create-modal');
+    const closeBtn = document.getElementById('close-create-modal');
+    const modal = document.getElementById('create-modal');
+    
+    if (openBtn && modal) {
+        // Открытие
+        openBtn.addEventListener('click', function() {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Закрытие по кнопке
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+        
+        // Закрытие по клику на overlay
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
