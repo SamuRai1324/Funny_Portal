@@ -4,7 +4,6 @@ from functools import wraps
 import sqlite3
 import os
 import uuid
-import hashlib
 from datetime import datetime, timedelta
 from config import *
 
@@ -218,18 +217,9 @@ def init_db():
         );
     ''')
 
-    admin = conn.execute('SELECT id FROM users WHERE username = ?', ('admin',)).fetchone()
-    if not admin:
-        conn.execute(
-            'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-            ('admin', 'admin@auranexus.com', hash_password('admin123'), 'admin')
-        )
+    # Админ НЕ создаётся здесь - создаётся через create_test_data.py
     conn.commit()
     conn.close()
-
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
 
 
 def allowed_file(filename, file_type):
@@ -506,7 +496,7 @@ def register():
             conn = get_db()
             conn.execute(
                 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                (username, email, hash_password(password))
+                (username, email, password)
             )
             conn.commit()
             flash('Регистрация успешна! Войдите в аккаунт.', 'success')
@@ -538,7 +528,7 @@ def login():
         conn = get_db()
         user = conn.execute(
             'SELECT * FROM users WHERE username = ? AND password = ?',
-            (username, hash_password(password))
+            (username, password)
         ).fetchone()
 
         if user:
@@ -677,20 +667,20 @@ def profile_settings():
             new_pass = request.form.get('new_password', '')
             confirm = request.form.get('confirm_password', '')
 
-            if hash_password(current) != user['password']:
+            if current != user['password']:
                 flash('Неверный текущий пароль', 'danger')
             elif len(new_pass) < 4:
                 flash('Новый пароль минимум 4 символа', 'danger')
             elif new_pass != confirm:
                 flash('Пароли не совпадают', 'danger')
             else:
-                conn.execute('UPDATE users SET password = ? WHERE id = ?', (hash_password(new_pass), user['id']))
+                conn.execute('UPDATE users SET password = ? WHERE id = ?', (new_pass, user['id']))
                 conn.commit()
                 flash('Пароль изменён', 'success')
 
         elif action == 'delete_account':
             password = request.form.get('delete_password', '')
-            if hash_password(password) != user['password']:
+            if password != user['password']:
                 flash('Неверный пароль', 'danger')
             else:
                 conn.execute('DELETE FROM users WHERE id = ?', (user['id'],))

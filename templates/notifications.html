@@ -2,7 +2,14 @@
 {% block title %}Уведомления - Aura Nexus{% endblock %}
 
 {% block content %}
-<h1 class="page-title">🔔 Уведомления</h1>
+<h1 class="page-title">
+    <span class="nav-icon page-title-icon">
+        <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">🔔</span>
+    </span>
+    Уведомления
+</h1>
 
 <div class="card">
     {% if notifications %}
@@ -34,6 +41,19 @@
 <style>
 .page-title {
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title-icon {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.page-title-icon img {
+    width: 32px !important;
+    height: 32px !important;
 }
 
 .notification-item {
@@ -53,14 +73,14 @@
 }
 
 .notification-icon {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     flex-shrink: 0;
 }
 

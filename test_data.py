@@ -11,63 +11,62 @@ def create_test_data():
     print("🚀 Создание тестовых данных...")
     
     # ==================== ПОЛЬЗОВАТЕЛИ ====================
+    # 1 админ + 1 модератор + 18 юзеров = 20 человек
     users_data = [
-        ('admin', 'admin@mail.ru', 'admin', 'admin', 'just admin'),
+        # Админ (1)
+        ('admin', 'admin@auranexus.com', 'admin', 'admin', 'Администратор платформы 👑'),
         
-        # Модераторы (2 штуки)
-        ('moderator_alex', 'alex.mod@test.com', 'mod123', 'moderator', 'Главный модератор сообщества 🛡️'),
-        ('moderator_kate', 'kate.mod@test.com', 'mod123', 'moderator', 'Слежу за порядком ⚖️'),
+        # Модератор (1)
+        ('moderator', 'moderator@auranexus.com', 'mod123', 'moderator', 'Слежу за порядком в сообществе 🛡️'),
         
-        # Обычные пользователи (15 штук)
-        ('john_doe', 'john@test.com', 'pass123', 'user', 'Люблю программирование и кофе ☕'),
-        ('alice_wonder', 'alice@test.com', 'pass123', 'user', 'Фотограф и путешественница 📸'),
-        ('bob_builder', 'bob@test.com', 'pass123', 'user', 'Строю миры из кода 🏗️'),
-        ('emma_star', 'emma@test.com', 'pass123', 'user', 'Музыкант и художник 🎨'),
-        ('max_power', 'max@test.com', 'pass123', 'user', 'Геймер и стример 🎮'),
-        ('lisa_cook', 'lisa@test.com', 'pass123', 'user', 'Готовлю вкусняшки 🍕'),
-        ('sarah_art', 'sarah@test.com', 'pass123', 'user', 'Digital artist ✨'),
-        ('mike_sport', 'mike@test.com', 'pass123', 'user', 'Фитнес и здоровый образ жизни 💪'),
-        ('anna_music', 'anna@test.com', 'pass123', 'user', 'Музыка - моя жизнь 🎵'),
-        ('peter_code', 'peter@test.com', 'pass123', 'user', 'Full-stack разработчик 💻'),
-        ('nina_photo', 'nina@test.com', 'pass123', 'user', 'Фотографирую природу 🌿'),
-        ('ivan_game', 'ivan@test.com', 'pass123', 'user', 'Киберспортсмен 🏆'),
-        ('olga_design', 'olga@test.com', 'pass123', 'user', 'UI/UX дизайнер 🎯'),
-        ('denis_travel', 'denis@test.com', 'pass123', 'user', 'Объездил 30 стран 🌍'),
-        ('maria_book', 'maria@test.com', 'pass123', 'user', 'Книжный червь 📚'),
-        ('sergey_tech', 'sergey@test.com', 'pass123', 'user', 'Обзоры гаджетов 📱'),
-        ('elena_yoga', 'elena@test.com', 'pass123', 'user', 'Йога и медитация 🧘'),
-        ('andrey_car', 'andrey@test.com', 'pass123', 'user', 'Автолюбитель 🚗'),
-        ('victoria_food', 'victoria@test.com', 'pass123', 'user', 'Ресторанный критик 🍽️'),
+        # Обычные пользователи (18)
+        ('john_doe', 'john@mail.ru', 'pass123', 'user', 'Люблю программирование и кофе ☕'),
+        ('alice_wonder', 'alice@mail.ru', 'pass123', 'user', 'Фотограф и путешественница 📸'),
+        ('bob_builder', 'bob@mail.ru', 'pass123', 'user', 'Строю миры из кода 🏗️'),
+        ('emma_star', 'emma@mail.ru', 'pass123', 'user', 'Музыкант и художник 🎨'),
+        ('max_power', 'max@mail.ru', 'pass123', 'user', 'Геймер и стример 🎮'),
+        ('lisa_cook', 'lisa@mail.ru', 'pass123', 'user', 'Готовлю вкусняшки 🍕'),
+        ('sarah_art', 'sarah@mail.ru', 'pass123', 'user', 'Digital artist ✨'),
+        ('mike_sport', 'mike@mail.ru', 'pass123', 'user', 'Фитнес и ЗОЖ 💪'),
+        ('anna_music', 'anna@mail.ru', 'pass123', 'user', 'Музыка - моя жизнь 🎵'),
+        ('peter_code', 'peter@mail.ru', 'pass123', 'user', 'Full-stack разработчик 💻'),
+        ('nina_photo', 'nina@mail.ru', 'pass123', 'user', 'Фотографирую природу 🌿'),
+        ('ivan_game', 'ivan@mail.ru', 'pass123', 'user', 'Киберспортсмен 🏆'),
+        ('olga_design', 'olga@mail.ru', 'pass123', 'user', 'UI/UX дизайнер 🎯'),
+        ('denis_travel', 'denis@mail.ru', 'pass123', 'user', 'Объездил 30 стран 🌍'),
+        ('maria_book', 'maria@mail.ru', 'pass123', 'user', 'Книжный червь 📚'),
+        ('sergey_tech', 'sergey@mail.ru', 'pass123', 'user', 'Обзоры гаджетов 📱'),
+        ('elena_yoga', 'elena@mail.ru', 'pass123', 'user', 'Йога и медитация 🧘'),
+        ('andrey_car', 'andrey@mail.ru', 'pass123', 'user', 'Автолюбитель 🚗'),
     ]
     
     user_ids = []
     for username, email, password, role, bio in users_data:
         try:
-            # ПАРОЛЬ БЕЗ ШИФРОВАНИЯ - просто текст
+            # ⚠️ ПАРОЛЬ БЕЗ ШИФРОВАНИЯ - просто текст!
             cursor = conn.execute(
                 'INSERT INTO users (username, email, password, role, bio) VALUES (?, ?, ?, ?, ?)',
                 (username, email, password, role, bio)
             )
             user_ids.append(cursor.lastrowid)
-            print(f"  ✓ Пользователь: {username} ({role})")
+            role_emoji = {'admin': '👑', 'moderator': '🛡️', 'user': '👤'}
+            print(f"  ✓ {role_emoji.get(role, '👤')} {username} ({role}) - пароль: {password}")
         except sqlite3.IntegrityError:
             existing = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
             if existing:
                 user_ids.append(existing['id'])
-            print(f"  → Пользователь {username} уже существует")
+            print(f"  → {username} уже существует")
     
-    # ==================== КАНАЛЫ ====================
+    # ==================== КАНАЛЫ (8 штук) ====================
     channels_data = [
-        ('TechNews', 'Новости технологий и IT индустрии 🖥️', user_ids[2] if len(user_ids) > 2 else 1),
-        ('GameZone', 'Игры, обзоры и стримы 🎮', user_ids[6] if len(user_ids) > 6 else 1),
-        ('ArtCorner', 'Искусство и творчество 🎨', user_ids[8] if len(user_ids) > 8 else 1),
-        ('MusicWorld', 'Музыка всех жанров 🎵', user_ids[10] if len(user_ids) > 10 else 1),
-        ('FoodLovers', 'Рецепты и кулинария 🍕', user_ids[7] if len(user_ids) > 7 else 1),
-        ('TravelClub', 'Путешествия и приключения ✈️', user_ids[15] if len(user_ids) > 15 else 1),
-        ('FitnessLife', 'Спорт и здоровье 💪', user_ids[9] if len(user_ids) > 9 else 1),
-        ('BookClub', 'Обсуждаем книги 📚', user_ids[16] if len(user_ids) > 16 else 1),
-        ('AutoWorld', 'Всё об автомобилях 🚗', user_ids[19] if len(user_ids) > 19 else 1),
-        ('DesignHub', 'Дизайн и креатив 🎨', user_ids[13] if len(user_ids) > 13 else 1),
+        ('Технологии', 'Новости IT, гаджеты, программирование 🖥️', user_ids[2]),
+        ('Игры', 'Обзоры игр, стримы, киберспорт 🎮', user_ids[6]),
+        ('Творчество', 'Искусство, дизайн, музыка 🎨', user_ids[8]),
+        ('Кулинария', 'Рецепты и кулинарные советы 🍕', user_ids[7]),
+        ('Путешествия', 'Истории из поездок ✈️', user_ids[15]),
+        ('Спорт', 'Фитнес, тренировки, ЗОЖ 💪', user_ids[9]),
+        ('Книги', 'Обсуждаем литературу 📚', user_ids[16]),
+        ('Авто', 'Всё об автомобилях 🚗', user_ids[19]),
     ]
     
     channel_ids = []
@@ -85,146 +84,112 @@ def create_test_data():
                 channel_ids.append(existing['id'])
             print(f"  → Канал {name} уже существует")
     
-    # ==================== ПОСТЫ (много!) ====================
+    # ==================== ПОСТЫ ====================
     posts_data = [
-        # TechNews
-        (user_ids[2], channel_ids[0] if channel_ids else None, 'text', 
-         'Новый iPhone 16 представлен!', 
-         'Apple представила новую линейку смартфонов с революционными функциями ИИ. Камера теперь 200 МП! #apple #iphone #tech'),
+        # Технологии
+        (user_ids[2], channel_ids[0], 'text', 
+         'Python vs JavaScript в 2024', 
+         'Сравниваем два популярных языка. Какой выбрать новичку? По моему опыту, Python лучше для начала - синтаксис проще и понятнее. #python #javascript #programming'),
         
-        (user_ids[11], channel_ids[0] if channel_ids else None, 'text',
-         'Python 4.0 - что нового?',
-         'Разбираем все нововведения в новой версии Python. Спойлер: GIL наконец убрали! #python #programming'),
+        (user_ids[11], channel_ids[0], 'text',
+         'Топ-5 расширений для VS Code',
+         'Делюсь своим списком must-have расширений: Prettier, ESLint, GitLens, Live Server, Auto Rename Tag. А какие используете вы? #vscode #coding'),
         
-        (user_ids[17], channel_ids[0] if channel_ids else None, 'text',
-         'Обзор нового MacBook Pro M4',
-         'Тестирую новый макбук уже неделю. Батарея держит 25 часов! #apple #macbook #review'),
+        (user_ids[17], channel_ids[0], 'text',
+         'Обзор нового MacBook Air M3',
+         'Пользуюсь уже месяц. Батарея держит весь день, производительность отличная. Единственный минус - цена 😅 #apple #macbook'),
         
-        (user_ids[4], channel_ids[0] if channel_ids else None, 'text',
-         'Лучшие расширения для VS Code 2024',
-         'Топ-10 расширений, которые ускорят вашу разработку в 2 раза! #vscode #productivity #coding'),
+        # Игры
+        (user_ids[6], channel_ids[1], 'text',
+         'GTA 6 - первые впечатления',
+         'Прошёл уже 20 часов. Графика нереальная, сюжет затягивает! Rockstar снова сделали шедевр 🎮 #gta6 #gaming'),
         
-        # GameZone
-        (user_ids[6], channel_ids[1] if len(channel_ids) > 1 else None, 'text',
-         'Обзор GTA 6 - шедевр!',
-         'Наконец-то дождались! Первые впечатления: графика нереальная, сюжет затягивает 🎮 #gta6 #gaming'),
+        (user_ids[13], channel_ids[1], 'text',
+         'Сборка игрового ПК за 80к',
+         'Собрал бюджетный игровой комп. RTX 4060, Ryzen 5 7600, 16GB RAM. Тянет всё на высоких! #pcbuild #gaming'),
         
-        (user_ids[12], channel_ids[1] if len(channel_ids) > 1 else None, 'text',
-         'Киберспорт: итоги турнира',
-         'Наша команда заняла 2 место на региональном турнире по CS2! 🏆 #esports #cs2'),
+        (user_ids[6], channel_ids[1], 'text',
+         'Лучшие инди-игры 2024',
+         'Моя подборка недооценённых инди: Hades 2, Balatro, Animal Well. Все - маст хэв! #indie #gaming'),
         
-        (user_ids[6], channel_ids[1] if len(channel_ids) > 1 else None, 'text',
-         'Топ-5 инди игр месяца',
-         'Подборка инди-игр, которые вы могли пропустить. Номер 3 - просто бомба! #indie #gaming'),
+        # Творчество
+        (user_ids[8], channel_ids[2], 'text',
+         'Как я рисовал закат',
+         'Работал над этим артом неделю. Использовал Procreate на iPad. Что думаете? #art #digital'),
         
-        (user_ids[12], channel_ids[1] if len(channel_ids) > 1 else None, 'text',
-         'Настройка игрового ПК',
-         'Гайд по сборке игрового компьютера за 100к рублей #pcbuild #gaming #guide'),
+        (user_ids[5], channel_ids[2], 'text',
+         'Туториал: основы композиции',
+         'Разбираем правило третей, золотое сечение и другие приёмы. Полезно для фото и дизайна! #tutorial #design'),
         
-        # ArtCorner
-        (user_ids[8], channel_ids[2] if len(channel_ids) > 2 else None, 'text',
-         'Мой новый арт - закат',
-         'Работал над этим рисунком целую неделю! Что думаете? #art #digital #sunset'),
+        (user_ids[14], channel_ids[2], 'text',
+         'Тренды в UI/UX 2024',
+         'Минимализм, тёмные темы, микроанимации. Что ещё актуально в этом году? #uidesign #trends'),
         
-        (user_ids[5], channel_ids[2] if len(channel_ids) > 2 else None, 'text',
-         'Туториал: как рисовать глаза',
-         'Подробный гайд по рисованию реалистичных глаз #tutorial #art #eyes'),
+        # Кулинария
+        (user_ids[7], channel_ids[3], 'text',
+         'Рецепт пасты карбонара',
+         'Настоящая итальянская карбонара БЕЗ сливок! Секрет в правильном соусе из желтков и пекорино 🍝 #food #recipe'),
         
-        (user_ids[13], channel_ids[2] if len(channel_ids) > 2 else None, 'text',
-         'Тренды в UI дизайне 2024',
-         'Неоморфизм уходит, возвращается скевоморфизм! #uidesign #trends'),
+        (user_ids[7], channel_ids[3], 'text',
+         'Завтрак за 10 минут',
+         '3 быстрых рецепта для тех, кто спешит: овсянка с ягодами, тосты с авокадо, омлет с овощами ☕ #breakfast'),
         
-        # MusicWorld
-        (user_ids[10], channel_ids[3] if len(channel_ids) > 3 else None, 'text',
-         'Топ-10 альбомов года',
-         'Мой личный рейтинг лучших музыкальных релизов 2024 🎵 #music #top10'),
+        # Путешествия
+        (user_ids[3], channel_ids[4], 'text',
+         'Неделя в Италии',
+         'Вернулась из Рима и Флоренции! Делюсь впечатлениями и лайфхаками. Обязательно попробуйте джелато! 🇮🇹 #travel #italy'),
         
-        (user_ids[5], channel_ids[3] if len(channel_ids) > 3 else None, 'text',
-         'Как научиться играть на гитаре',
-         'Пошаговый план для новичков. За 3 месяца - первая песня! #guitar #music #tutorial'),
-        
-        # FoodLovers
-        (user_ids[7], channel_ids[4] if len(channel_ids) > 4 else None, 'text',
-         'Рецепт идеальной пасты карбонара',
-         'Делюсь секретом настоящей итальянской карбонары! Без сливок! 🍝 #food #recipe #pasta'),
-        
-        (user_ids[20], channel_ids[4] if len(channel_ids) > 4 else None, 'text',
-         'Обзор ресторана "Высота"',
-         'Побывала в новом ресторане на 50 этаже. Виды шикарные, еда... средняя 🍽️ #review #restaurant'),
-        
-        (user_ids[7], channel_ids[4] if len(channel_ids) > 4 else None, 'text',
-         'Завтрак за 5 минут',
-         '3 рецепта быстрого и полезного завтрака для тех, кто спешит ☕ #breakfast #quickrecipe'),
-        
-        # TravelClub
-        (user_ids[3], channel_ids[5] if len(channel_ids) > 5 else None, 'text',
-         'Путешествие по Италии',
-         'Только вернулась из невероятного путешествия! Рим, Флоренция, Венеция 🇮🇹 #travel #italy'),
-        
-        (user_ids[15], channel_ids[5] if len(channel_ids) > 5 else None, 'text',
+        (user_ids[15], channel_ids[4], 'text',
          'Бюджетно по Азии',
-         'Как я путешествовал месяц по Таиланду за 50к рублей #budget #travel #thailand'),
+         'Как я месяц путешествовал по Таиланду за 50к рублей. Спойлер: уличная еда - это спасение! #budget #travel'),
         
-        (user_ids[15], channel_ids[5] if len(channel_ids) > 5 else None, 'text',
-         'Что взять в путешествие',
-         'Чек-лист вещей для путешествия налегке. Всё влезет в ручную кладь! #packing #travel'),
+        # Спорт
+        (user_ids[9], channel_ids[5], 'text',
+         'Программа тренировок для новичков',
+         'Составил базовую программу на 3 дня в неделю. Все упражнения с собственным весом 💪 #fitness #workout'),
         
-        # FitnessLife
-        (user_ids[9], channel_ids[6] if len(channel_ids) > 6 else None, 'text',
-         'Утренняя тренировка 30 минут',
-         'Моя программа утренней тренировки для бодрости на весь день 💪 #fitness #workout'),
-        
-        (user_ids[18], channel_ids[6] if len(channel_ids) > 6 else None, 'text',
+        (user_ids[18], channel_ids[5], 'text',
          'Йога для начинающих',
-         'Простые асаны, которые можно делать дома без подготовки 🧘 #yoga #beginner'),
+         '5 простых асан, которые можно делать дома. Улучшают гибкость и снимают стресс 🧘 #yoga'),
         
-        (user_ids[9], channel_ids[6] if len(channel_ids) > 6 else None, 'text',
-         'Правильное питание спортсмена',
-         'Разбираем КБЖУ и составляем рацион для набора массы #nutrition #fitness'),
-        
-        # BookClub
-        (user_ids[16], channel_ids[7] if len(channel_ids) > 7 else None, 'text',
+        # Книги
+        (user_ids[16], channel_ids[6], 'text',
          'Топ-5 книг по саморазвитию',
-         'Книги, которые изменили мое мышление 📚 #books #selfimprovement'),
+         'Мой список: Атомные привычки, Думай медленно решай быстро, 7 навыков, Поток, Антихрупкость 📚 #books'),
         
-        (user_ids[16], channel_ids[7] if len(channel_ids) > 7 else None, 'text',
-         'Обзор: "Мастер и Маргарита"',
-         'Перечитала классику и нашла новые смыслы #bulgakov #classic #review'),
+        (user_ids[16], channel_ids[6], 'text',
+         'Обзор "Мастер и Маргарита"',
+         'Перечитала спустя 10 лет. Совершенно другое восприятие! Какая ваша любимая цитата? #bulgakov'),
         
-        # AutoWorld  
-        (user_ids[19], channel_ids[8] if len(channel_ids) > 8 else None, 'text',
-         'Тест-драйв Tesla Model S',
-         'Впечатления от электромобиля после недели использования ⚡ #tesla #electric #car'),
+        # Авто
+        (user_ids[19], channel_ids[7], 'text',
+         'Тест-драйв Tesla Model 3',
+         'Взял на тест электромобиль. Автопилот впечатляет, но инфраструктура пока слабая ⚡ #tesla #electric'),
         
-        (user_ids[19], channel_ids[8] if len(channel_ids) > 8 else None, 'text',
-         'Как выбрать первый автомобиль',
-         'Советы для тех, кто покупает машину впервые 🚗 #firstcar #guide'),
+        (user_ids[19], channel_ids[7], 'text',
+         'Как выбрать первую машину',
+         'Советы новичкам: на что смотреть, какие марки надёжные, где лучше покупать 🚗 #firstcar'),
         
-        # DesignHub
-        (user_ids[13], channel_ids[9] if len(channel_ids) > 9 else None, 'text',
-         'Figma vs Sketch в 2024',
-         'Сравнение двух главных инструментов дизайнера #figma #sketch #design'),
-        
-        (user_ids[8], channel_ids[9] if len(channel_ids) > 9 else None, 'text',
-         'Цветовые палитры для проектов',
-         '10 готовых палитр для ваших проектов #colors #palette #design'),
-        
-        # Посты без канала (в общую ленту)
+        # Посты без канала (общая лента)
         (user_ids[0], None, 'text',
-         'Как прошёл мой день',
-         'Сегодня наконец разобрался с багом, который мучил неделю! 🎉'),
+         'Добро пожаловать!',
+         'Приветствуем всех на нашей платформе! Читайте правила и общайтесь уважительно 👋'),
         
         (user_ids[1], None, 'text',
-         'Правила нашего сообщества',
-         'Напоминаем: уважайте друг друга, без спама и оскорблений! ⚖️'),
+         'Правила сообщества',
+         'Напоминаю основные правила: без спама, оскорблений и нелегального контента. Вопросы - в ЛС ⚖️'),
         
-        (user_ids[14], None, 'text',
-         'Новый фотосет: осень в парке',
-         'Поймала золотую осень в городском парке 🍂 #photo #autumn'),
+        (user_ids[4], None, 'text',
+         'Ищу команду для проекта',
+         'Запускаем стартап, нужен фронтендер и дизайнер. Пишите в ЛС! #job #startup'),
         
-        (user_ids[11], None, 'text',
-         'Ищу напарника для проекта',
-         'Нужен фронтендер для стартапа. Пишите в ЛС! #job #frontend #startup'),
+        (user_ids[12], None, 'text',
+         'Осенний фотосет',
+         'Поймала золотую осень в парке. Обожаю это время года! 🍂 #photo #autumn'),
+        
+        (user_ids[10], None, 'text',
+         'Новый трек!',
+         'Записал кавер на любимую песню. Скоро выложу, ждите! 🎵 #music'),
     ]
     
     post_ids = []
@@ -235,45 +200,48 @@ def create_test_data():
                 (user_id, channel_id, post_type, title, content)
             )
             post_ids.append(cursor.lastrowid)
-            print(f"  ✓ Пост: {title[:35]}...")
+            print(f"  ✓ Пост: {title[:40]}...")
         except Exception as e:
-            print(f"  ✗ Ошибка поста: {e}")
+            print(f"  ✗ Ошибка: {e}")
     
-    # ==================== КОММЕНТАРИИ (много!) ====================
-    comments_data = [
+    # ==================== КОММЕНТАРИИ ====================
+    comments_templates = [
         'Отличный пост! 👍',
         'Спасибо за информацию!',
-        'Очень интересно, жду продолжения',
-        'Согласен на все 100%',
-        'А можно подробнее?',
+        'Очень полезно, сохранил',
+        'Согласен на 100%',
+        'А можно подробнее про это?',
         'Круто! 🔥',
-        'Подписался на канал',
-        'Лучший контент!',
+        'Подписался!',
+        'Топ контент как всегда',
         'Наконец-то качественный материал',
-        'Буду ждать новых постов',
-        'Это именно то, что я искал!',
-        'Сохранил в закладки 📌',
+        'Жду продолжения!',
+        'Это то, что я искал!',
+        'В закладки 📌',
         'Автор молодец!',
-        'Не согласен, но уважаю мнение',
-        'Хотелось бы увидеть больше примеров',
-        'Класс, спасибо! 💯',
+        'Интересная точка зрения',
+        'Хотелось бы больше примеров',
+        'Класс! 💯',
         'Поделился с друзьями',
-        'Вопрос: а как насчёт...?',
-        'Это гениально!',
-        'Полезная информация, благодарю',
+        'У меня вопрос...',
+        'Гениально!',
+        'Благодарю за пост',
         'Жду вторую часть!',
-        'Лайк и подписка! 👊',
-        'Наконец кто-то это написал',
+        'Лайк! 👊',
+        'Давно искал такое',
         'Прикольно 😎',
-        'Топ контент как всегда!',
+        'Полностью поддерживаю!',
+        'Не думал об этом раньше',
+        'Очень актуально',
+        'Мне помогло, спасибо',
     ]
     
     comment_count = 0
     for post_id in post_ids:
-        num_comments = random.randint(2, 8)  # Больше комментариев
+        num_comments = random.randint(3, 10)
         for _ in range(num_comments):
-            user_id = random.choice(user_ids) if user_ids else 1
-            content = random.choice(comments_data)
+            user_id = random.choice(user_ids)
+            content = random.choice(comments_templates)
             try:
                 conn.execute(
                     'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
@@ -282,19 +250,18 @@ def create_test_data():
                 comment_count += 1
             except:
                 pass
-    print(f"  ✓ Добавлено {comment_count} комментариев")
+    print(f"  ✓ Комментариев: {comment_count}")
     
-    # ==================== РЕАКЦИИ (много!) ====================
-    reaction_types = ['like', 'dislike', 'love', 'laugh', 'wow', 'sad']
+    # ==================== РЕАКЦИИ ====================
+    reaction_types = ['like', 'love', 'laugh', 'wow', 'sad', 'dislike']
+    reaction_weights = [50, 25, 12, 8, 3, 2]  # like самый частый
+    
     reaction_count = 0
     for post_id in post_ids:
-        num_reactions = random.randint(5, 15)  # Больше реакций
-        reacted_users = random.sample(user_ids, min(num_reactions, len(user_ids))) if user_ids else []
+        num_reactions = random.randint(8, 18)
+        reacted_users = random.sample(user_ids, min(num_reactions, len(user_ids)))
         for user_id in reacted_users:
-            reaction = random.choices(
-                reaction_types, 
-                weights=[50, 5, 25, 10, 8, 2]  # like чаще всего
-            )[0]
+            reaction = random.choices(reaction_types, weights=reaction_weights)[0]
             try:
                 conn.execute(
                     'INSERT OR IGNORE INTO reactions (user_id, post_id, reaction_type) VALUES (?, ?, ?)',
@@ -303,13 +270,13 @@ def create_test_data():
                 reaction_count += 1
             except:
                 pass
-    print(f"  ✓ Добавлено {reaction_count} реакций")
+    print(f"  ✓ Реакций: {reaction_count}")
     
     # ==================== ПОДПИСКИ НА КАНАЛЫ ====================
     sub_count = 0
     for channel_id in channel_ids:
-        num_subs = random.randint(8, 18)  # Больше подписчиков
-        subscribers = random.sample(user_ids, min(num_subs, len(user_ids))) if user_ids else []
+        num_subs = random.randint(10, 18)
+        subscribers = random.sample(user_ids, min(num_subs, len(user_ids)))
         for user_id in subscribers:
             try:
                 conn.execute(
@@ -319,40 +286,44 @@ def create_test_data():
                 sub_count += 1
             except:
                 pass
-    print(f"  ✓ Добавлено {sub_count} подписок на каналы")
+    print(f"  ✓ Подписок: {sub_count}")
     
-    # ==================== ГЛОБАЛЬНЫЙ ЧАТ (активный!) ====================
+    # ==================== ГЛОБАЛЬНЫЙ ЧАТ ====================
     chat_messages = [
-        (user_ids[2], 'Привет всем! 👋'),
+        (user_ids[0], 'Добро пожаловать всем новичкам! 👋'),
+        (user_ids[2], 'Привет! Кто тут есть?'),
         (user_ids[3], 'Здравствуйте!'),
-        (user_ids[4], 'Как дела у всех?'),
-        (user_ids[5], 'Отличная погода сегодня ☀️'),
-        (user_ids[6], 'Кто играет в новую игру?'),
-        (user_ids[7], 'Готовлю ужин, кто голоден? 🍕'),
-        (user_ids[2], 'Новый пост скоро выложу!'),
-        (user_ids[3], 'Жду с нетерпением'),
-        (user_ids[8], 'Рисую новый арт, скоро покажу'),
+        (user_ids[4], 'Отличный день для кода ☕'),
+        (user_ids[5], 'Рисую новый арт 🎨'),
+        (user_ids[6], 'Кто играет сегодня вечером?'),
+        (user_ids[7], 'Готовлю пасту, кто голоден? 🍝'),
+        (user_ids[8], 'Новый пост скоро!'),
         (user_ids[9], 'Только с тренировки 💪'),
-        (user_ids[10], 'Слушаю новый альбом, огонь!'),
-        (user_ids[11], 'Кто-нибудь знает Python?'),
-        (user_ids[12], 'Я знаю, что нужно?'),
-        (user_ids[11], 'Помоги с одной задачей плиз'),
-        (user_ids[13], 'Показываю новый дизайн сайта'),
-        (user_ids[14], 'Красиво получилось!'),
-        (user_ids[15], 'Планирую поездку в Грузию'),
-        (user_ids[16], 'Там классно! Был в прошлом году'),
-        (user_ids[17], 'Обзор нового телефона готов'),
-        (user_ids[18], 'Утренняя йога - залог бодрости'),
+        (user_ids[10], 'Слушаю новый альбом'),
+        (user_ids[6], 'Я! Во что играем?'),
+        (user_ids[13], 'CS2 или Valorant?'),
+        (user_ids[6], 'Давай CS2'),
+        (user_ids[11], 'Кто шарит в Python?'),
+        (user_ids[2], 'Я, что нужно?'),
+        (user_ids[11], 'Помоги с asyncio плиз'),
+        (user_ids[2], 'Пиши в ЛС'),
+        (user_ids[14], 'Новый дизайн готов!'),
+        (user_ids[3], 'Покажи!'),
+        (user_ids[15], 'Планирую поездку в Грузию 🇬🇪'),
+        (user_ids[16], 'Там супер! Был в прошлом году'),
+        (user_ids[15], 'Что посоветуешь?'),
+        (user_ids[16], 'Тбилиси и Батуми must visit'),
+        (user_ids[17], 'Обзор нового iPhone готов'),
+        (user_ids[18], 'Утренняя йога 🧘'),
         (user_ids[19], 'Помыл машину наконец 🚗'),
-        (user_ids[20], 'Нашла классный ресторан, советую'),
-        (user_ids[0], 'Модераторы, у нас всё спокойно?'),
-        (user_ids[1], 'Да, всё под контролем ✅'),
-        (user_ids[2], 'Спасибо за работу!'),
+        (user_ids[1], 'Напоминаю о правилах чата ⚖️'),
         (user_ids[4], 'Стрим сегодня в 20:00!'),
-        (user_ids[6], 'Буду смотреть!'),
-        (user_ids[12], '+1'),
-        (user_ids[8], 'Я тоже подключусь'),
+        (user_ids[6], 'Буду смотреть! 👀'),
+        (user_ids[13], '+1'),
+        (user_ids[8], 'Я тоже приду'),
         (user_ids[3], 'Хорошего всем вечера! 🌙'),
+        (user_ids[5], 'И вам!'),
+        (user_ids[7], 'Спокойной ночи 😴'),
     ]
     
     for user_id, content in chat_messages:
@@ -363,46 +334,41 @@ def create_test_data():
             )
         except:
             pass
-    print(f"  ✓ Добавлено {len(chat_messages)} сообщений в чат")
+    print(f"  ✓ Сообщений в чате: {len(chat_messages)}")
     
     # ==================== ЛИЧНЫЕ СООБЩЕНИЯ ====================
-    conversations_created = 0
-    messages_created = 0
-    
-    # Создаём несколько переписок
-    conversation_pairs = [
-        (user_ids[2], user_ids[3]),
-        (user_ids[4], user_ids[6]),
-        (user_ids[0], user_ids[2]),
-        (user_ids[5], user_ids[7]),
-        (user_ids[11], user_ids[12]),
+    conversations = [
+        (user_ids[2], user_ids[3], [
+            ('Привет! Видел твой пост про Италию?', 0),
+            ('Да! Только вернулась)', 1),
+            ('Как там? Стоит ехать?', 0),
+            ('Однозначно! Рим - must visit', 1),
+            ('Спасибо, буду планировать!', 0),
+        ]),
+        (user_ids[6], user_ids[13], [
+            ('Го в CS2?', 0),
+            ('Давай, через час', 1),
+            ('Ок, пиши когда будешь', 0),
+            ('Онлайн, заходи', 1),
+        ]),
+        (user_ids[11], user_ids[2], [
+            ('Привет! Можешь помочь с кодом?', 0),
+            ('Привет, конечно. Что случилось?', 1),
+            ('Не работает async функция', 0),
+            ('Скинь код, посмотрю', 1),
+            ('Отправил в телегу', 0),
+        ]),
+        (user_ids[0], user_ids[1], [
+            ('Как обстановка?', 0),
+            ('Всё спокойно, пару спамеров забанил', 1),
+            ('Отлично, продолжай в том же духе', 0),
+            ('Принял!', 1),
+        ]),
     ]
     
-    private_dialogs = [
-        [
-            'Привет! Видел твой пост?',
-            'Да, спасибо! Старался)',
-            'Очень круто получилось!',
-            'Скоро будет продолжение',
-            'Жду!'
-        ],
-        [
-            'Эй, играешь сегодня?',
-            'Да, в 8 вечера',
-            'Окей, буду онлайн',
-            'Позови остальных',
-            'Уже написал им'
-        ],
-        [
-            'Нужна помощь с постом',
-            'Что случилось?',
-            'Не знаю что написать',
-            'Пиши от души, люди оценят',
-            'Спасибо за совет!'
-        ]
-    ]
-    
-    for i, (user1, user2) in enumerate(conversation_pairs):
+    conv_count = 0
+    msg_count = 0
+    for user1, user2, messages in conversations:
         user1_id, user2_id = min(user1, user2), max(user1, user2)
         try:
             cursor = conn.execute(
@@ -410,50 +376,74 @@ def create_test_data():
                 (user1_id, user2_id)
             )
             conv_id = cursor.lastrowid
-            conversations_created += 1
+            conv_count += 1
             
-            dialog = private_dialogs[i % len(private_dialogs)]
-            for j, content in enumerate(dialog):
-                sender = user1 if j % 2 == 0 else user2
+            for content, sender_idx in messages:
+                sender = user1 if sender_idx == 0 else user2
                 conn.execute(
                     'INSERT INTO messages (conversation_id, sender_id, content) VALUES (?, ?, ?)',
                     (conv_id, sender, content)
                 )
-                messages_created += 1
+                msg_count += 1
         except:
             pass
     
-    print(f"  ✓ Создано {conversations_created} переписок с {messages_created} сообщениями")
+    print(f"  ✓ Переписок: {conv_count}, сообщений: {msg_count}")
+    
+    # ==================== УВЕДОМЛЕНИЯ ====================
+    notifications_data = [
+        (user_ids[2], 'reaction', 'alice_wonder оценил ваш пост', '/#post-1'),
+        (user_ids[2], 'comment', 'bob_builder прокомментировал ваш пост', '/#post-1'),
+        (user_ids[3], 'subscribe', 'john_doe подписался на канал "Путешествия"', '/channel/5'),
+        (user_ids[6], 'reaction', 'ivan_game оценил ваш пост', '/#post-4'),
+        (user_ids[7], 'comment', 'emma_star прокомментировал ваш пост', '/#post-10'),
+    ]
+    
+    for user_id, n_type, content, link in notifications_data:
+        try:
+            conn.execute(
+                'INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)',
+                (user_id, n_type, content, link)
+            )
+        except:
+            pass
+    print(f"  ✓ Уведомлений: {len(notifications_data)}")
     
     conn.commit()
     conn.close()
     
-    print("\n" + "="*50)
-    print("✅ ТЕСТОВЫЕ ДАННЫЕ УСПЕШНО СОЗДАНЫ!")
-    print("="*50)
-    print("\n📊 Статистика:")
+    # ==================== ИТОГИ ====================
+    print("\n" + "="*55)
+    print("  ✅ ТЕСТОВЫЕ ДАННЫЕ УСПЕШНО СОЗДАНЫ!")
+    print("="*55)
+    
+    print("\n📊 СТАТИСТИКА:")
     print(f"   • Пользователей: {len(users_data)}")
     print(f"   • Каналов: {len(channels_data)}")
     print(f"   • Постов: {len(posts_data)}")
     print(f"   • Комментариев: ~{comment_count}")
     print(f"   • Реакций: ~{reaction_count}")
+    print(f"   • Подписок: ~{sub_count}")
+    print(f"   • Сообщений в чате: {len(chat_messages)}")
     
-    print("\n📋 ТЕСТОВЫЕ АККАУНТЫ:")
-    print("-"*50)
-    print("   👑 АДМИН:")
-    print("      • admin / admin123")
-    print("\n   🛡️ МОДЕРАТОРЫ (пароль: mod123):")
-    print("      • moderator_alex")
-    print("      • moderator_kate")
-    print("\n   👤 ПОЛЬЗОВАТЕЛИ (пароль: pass123):")
-    print("      • john_doe, alice_wonder, bob_builder")
-    print("      • emma_star, max_power, lisa_cook")
-    print("      • sarah_art, mike_sport, anna_music")
-    print("      • peter_code, nina_photo, ivan_game")
-    print("      • olga_design, denis_travel, maria_book")
-    print("      • sergey_tech, elena_yoga, andrey_car")
-    print("      • victoria_food")
-    print("-"*50)
+    print("\n" + "="*55)
+    print("  📋 АККАУНТЫ ДЛЯ ВХОДА")
+    print("="*55)
+    print("\n  👑 АДМИНИСТРАТОР:")
+    print("     Логин: admin")
+    print("     Пароль: admin")
+    print("\n  🛡️ МОДЕРАТОР:")
+    print("     Логин: moderator")
+    print("     Пароль: mod123")
+    print("\n  👤 ПОЛЬЗОВАТЕЛИ (пароль у всех: pass123):")
+    print("     john_doe, alice_wonder, bob_builder,")
+    print("     emma_star, max_power, lisa_cook,")
+    print("     sarah_art, mike_sport, anna_music,")
+    print("     peter_code, nina_photo, ivan_game,")
+    print("     olga_design, denis_travel, maria_book,")
+    print("     sergey_tech, elena_yoga, andrey_car")
+    print("="*55)
+
 
 if __name__ == '__main__':
     create_test_data()

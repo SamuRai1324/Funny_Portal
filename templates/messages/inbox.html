@@ -1,41 +1,327 @@
 {% extends 'base.html' %}
+{% set hide_sidebar = true %}
 {% block title %}Сообщения - Aura Nexus{% endblock %}
 
 {% block content %}
-<h1 style="margin-bottom: 1.5rem;">✉️ Сообщения</h1>
+<h1 class="page-title">
+    <span class="nav-icon page-title-icon">
+        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">✉️</span>
+    </span>
+    Сообщения
+</h1>
 
-<div class="card">
-    {% if conversations %}
-    <div style="max-height: 600px; overflow-y: auto;">
-        {% for conv in conversations %}
-        <a href="/messages/{{ conv.other_id }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); text-decoration: none; transition: background 0.2s;">
-            <div style="position: relative;">
-                <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem; overflow: hidden;">
-                    {% if conv.other_avatar %}
-                    <img src="{{ url_for('uploaded_file', filename=conv.other_avatar) }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-                    {% else %}
-                    {{ conv.other_username[0]|upper }}
-                    {% endif %}
-                </div>
-                {% if conv.unread_count > 0 %}
-                <span style="position: absolute; top: -2px; right: -2px; background: var(--danger); color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 10px; min-width: 18px; text-align: center;">{{ conv.unread_count }}</span>
-                {% endif %}
+<div class="messages-layout">
+    <!-- ЛЕВАЯ КОЛОНКА - Личные переписки -->
+    <div class="messages-conversations">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="nav-icon">
+                        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">💬</span>
+                    </span>
+                    Личные сообщения
+                </h3>
             </div>
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 600; color: var(--text-primary);">{{ conv.other_username }}</div>
-                <div style="font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    {{ conv.last_message or 'Нет сообщений' }}
-                </div>
+            {% if conversations %}
+            <div class="conversations-list">
+                {% for conv in conversations %}
+                <a href="/messages/{{ conv.other_id }}" class="conversation-item {% if conv.unread_count > 0 %}unread{% endif %}">
+                    <div class="conversation-avatar-wrap">
+                        <div class="conversation-avatar">
+                            {% if conv.other_avatar %}
+                            <img src="{{ url_for('uploaded_file', filename=conv.other_avatar) }}" alt="">
+                            {% else %}
+                            {{ conv.other_username[0]|upper }}
+                            {% endif %}
+                        </div>
+                        {% if conv.unread_count > 0 %}
+                        <span class="unread-badge">{{ conv.unread_count }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ conv.other_username }}</div>
+                        <div class="conversation-preview">
+                            {{ conv.last_message or 'Нет сообщений' }}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
             </div>
-        </a>
-        {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">💬</div>
+                <h3 class="empty-state-title">Диалогов пока нет</h3>
+                <p>Напишите кому-нибудь первым!</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">💬</div>
-        <h3 class="empty-state-title">Диалогов пока нет</h3>
-        <p>Напишите кому-нибудь первым!</p>
+
+    <!-- ПРАВАЯ КОЛОНКА - Глобальный чат -->
+    <div class="messages-global-chat">
+        <div class="card chat-box-large">
+            <div class="card-header">
+                <h3 class="card-title">🌐 Глобальный чат</h3>
+            </div>
+            <div class="chat-messages" id="global-chat-messages">
+                {% for msg in chat_messages %}
+                <div class="chat-message" data-message-id="{{ msg.id }}">
+                    <div class="chat-message-avatar">
+                        {% if msg.avatar %}
+                        <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
+                        {% else %}
+                        {{ msg.username[0]|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="chat-message-content">
+                        <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
+                        <div class="chat-message-text">{{ msg.content }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state" style="padding: 2rem;">
+                    <p>Сообщений пока нет</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="chat-cooldown" style="display: none; padding: 0.5rem 1rem; text-align: center; color: var(--warning); font-size: 0.85rem;"></div>
+            <form class="chat-input" id="global-chat-form" action="/api/global_chat" method="POST">
+                <input type="text" name="content" id="global-chat-input" placeholder="Написать в глобальный чат..." autocomplete="off" required>
+                <button type="submit">➤</button>
+            </form>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+<style>
+.page-title {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title-icon {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.page-title-icon img {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+/* ═══ ДВУХКОЛОНОЧНЫЙ LAYOUT ═══ */
+.messages-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* Левая колонка - Личные переписки */
+.messages-conversations {
+    min-width: 0;
+}
+
+.conversations-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.conversation-item:last-child {
+    border-bottom: none;
+}
+
+.conversation-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.conversation-item.unread {
+    background: var(--accent-purple-alpha);
+}
+
+.conversation-avatar-wrap {
+    position: relative;
+}
+
+.conversation-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    overflow: hidden;
+    color: white;
+}
+
+.conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.unread-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: var(--danger);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.conversation-preview {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Правая колонка - Глобальный чат */
+.messages-global-chat {
+    min-width: 0;
+}
+
+.chat-box-large {
+    display: flex;
+    flex-direction: column;
+    height: 550px;
+}
+
+.chat-box-large .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.chat-box-large .chat-message {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.chat-box-large .chat-message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.chat-box-large .chat-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-box-large .chat-message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-box-large .chat-message-author {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-green);
+}
+
+.chat-box-large .chat-message-text {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.chat-box-large .chat-input {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-box-large .chat-input input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.chat-box-large .chat-input input:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+}
+
+.chat-box-large .chat-input button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.chat-box-large .chat-input button:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-glow-green);
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 900px) {
+    .messages-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .chat-box-large {
+        height: 400px;
+    }
+}
+</style>
 {% endblock %}
