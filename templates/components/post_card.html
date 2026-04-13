@@ -1,5 +1,14 @@
 <article class="post-card" id="post-{{ post.id }}" data-type="{{ post.post_type }}">
     <div class="post-header">
+        {% if post.channel_id and post.channel_name %}
+        <a href="/channel/{{ post.channel_id }}" class="post-avatar">
+            {% if post.channel_avatar %}
+            <img src="{{ url_for('uploaded_file', filename=post.channel_avatar) }}" alt="">
+            {% else %}
+            📺
+            {% endif %}
+        </a>
+        {% else %}
         <a href="/profile/{{ post.username }}" class="post-avatar">
             {% if post.avatar %}
             <img src="{{ url_for('uploaded_file', filename=post.avatar) }}" alt="">
@@ -7,20 +16,35 @@
             {{ post.username[0]|upper }}
             {% endif %}
         </a>
+        {% endif %}
+
         <div class="post-meta">
             <div class="post-author">
+                {% if post.channel_id and post.channel_name %}
+                <a href="/channel/{{ post.channel_id }}">{{ post.channel_name }}</a>
+                <span class="post-author-sub">от <a href="/profile/{{ post.username }}">{{ post.username }}</a></span>
+                {% else %}
                 <a href="/profile/{{ post.username }}">{{ post.username }}</a>
-                <span class="post-badge {{ post.post_type }}">{{ post.post_type }}</span>
+                {% endif %}
+                <span class="post-badge {{ post.post_type }}">
+                    {% if post.post_type == 'text' %}Пост
+                    {% elif post.post_type == 'video' %}Видео
+                    {% elif post.post_type == 'photo' %}Фото
+                    {% elif post.post_type == 'audio' %}Аудио
+                    {% elif post.post_type == 'article' %}Статья
+                    {% elif post.post_type == 'story' %}История
+                    {% else %}{{ post.post_type }}{% endif %}
+                </span>
             </div>
             <div class="post-time">
-                <span>{{ post.created_at[:16] }}</span>
+                <span data-utc="{{ post.created_at }}">{{ post.created_at[:16] }}</span>
                 {% if post.channel_name %}
                 <span>•</span>
                 <a href="/channel/{{ post.channel_id }}" class="post-channel">{{ post.channel_name }}</a>
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="dropdown post-options">
             <button class="post-options-btn">⋮</button>
             <div class="dropdown-menu">
@@ -31,9 +55,11 @@
                     </button>
                 </form>
                 {% endif %}
+                {% if current_user %}
                 <button data-modal="report-modal-{{ post.id }}">
                     <span>⚠️</span> Пожаловаться
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -42,20 +68,18 @@
         {% if post.title %}
         <h2 class="post-title">{{ post.title }}</h2>
         {% endif %}
-        
+
         {% if post.post_type == 'article' %}
-        <!-- Статья - показываем превью -->
         <div class="post-text truncated" data-full-text="true">
             {{ post.content|safe }}
         </div>
         <button class="read-more-btn" data-post-id="{{ post.id }}">Читать далее ↓</button>
-        {% else %}
-        <!-- Обычный пост -->
-        <div class="post-text {% if post.content and post.content|length > 500 %}truncated{% endif %}" 
-             {% if post.content and post.content|length > 500 %}data-full-text="true"{% endif %}>
+        {% elif post.content %}
+        <div class="post-text {% if post.content|length > 500 %}truncated{% endif %}"
+             {% if post.content|length > 500 %}data-full-text="true"{% endif %}>
             <p>{{ post.content }}</p>
         </div>
-        {% if post.content and post.content|length > 500 %}
+        {% if post.content|length > 500 %}
         <button class="read-more-btn" data-post-id="{{ post.id }}">Читать далее ↓</button>
         {% endif %}
         {% endif %}
@@ -75,7 +99,7 @@
             </div>
         </div>
         {% elif post.file_path %}
-        <div class="post-media">
+        <div class="post-media post-media-single">
             <img src="{{ url_for('uploaded_file', filename=post.file_path) }}" alt="" loading="lazy">
         </div>
         {% endif %}
@@ -88,8 +112,8 @@
     <div class="post-reactions" data-post-reactions="{{ post.id }}">
         {% set reactions_map = {'like': '👍', 'dislike': '👎', 'love': '❤️', 'laugh': '😂', 'wow': '😮', 'sad': '😢'} %}
         {% for reaction_type in REACTION_TYPES %}
-        <button class="reaction-btn {% if post.user_reaction == reaction_type %}active{% endif %}" 
-                data-post-id="{{ post.id }}" 
+        <button class="reaction-btn {% if post.user_reaction == reaction_type %}active{% endif %}"
+                data-post-id="{{ post.id }}"
                 data-reaction="{{ reaction_type }}">
             <span class="emoji">{{ reactions_map[reaction_type] }}</span>
             <span class="reaction-count">{% if post.reactions and post.reactions.get(reaction_type) %}{{ post.reactions[reaction_type] }}{% endif %}</span>
@@ -99,20 +123,31 @@
 
     <div class="post-actions">
         <button class="action-btn toggle-comments" data-post-id="{{ post.id }}">
-            💬 {{ post.comment_count or 0 }} комментариев
+            💬 <span class="comment-count-{{ post.id }}">{{ post.comment_count or 0 }}</span> комментариев
         </button>
     </div>
 
     <div class="comments-section hidden" id="comments-{{ post.id }}">
         {% if current_user %}
-        <form action="/api/comment/{{ post.id }}" method="POST" class="comment-form">
-            <input type="text" name="content" placeholder="Написать комментарий..." class="form-control">
-            <button type="submit" class="btn btn-sm">Отправить</button>
-        </form>
+        <div class="comment-form-wrap">
+            <div class="comment-avatar">
+                {% if current_user.avatar %}
+                <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
+                {% else %}
+                {{ current_user.username[0]|upper }}
+                {% endif %}
+            </div>
+            <form class="comment-form" data-post-id="{{ post.id }}">
+                <input type="text" name="content" placeholder="Написать комментарий..." class="form-control">
+                <button type="submit" class="btn btn-sm">Отправить</button>
+            </form>
+        </div>
         {% endif %}
+        <div class="comments-list" id="comments-list-{{ post.id }}"></div>
     </div>
 </article>
 
+{% if current_user %}
 <div class="modal-overlay" id="report-modal-{{ post.id }}">
     <div class="modal">
         <div class="modal-header">
@@ -142,3 +177,4 @@
         </form>
     </div>
 </div>
+{% endif %}

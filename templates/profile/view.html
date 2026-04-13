@@ -18,8 +18,10 @@
         </div>
         <div class="profile-details">
             <h1 class="profile-name">{{ profile_user.username }}</h1>
-            <p class="profile-username">@{{ profile_user.username }} · На сайте с {{ profile_user.created_at[:10] }}</p>
-            
+            <p class="profile-username">
+                @{{ profile_user.username }} · На сайте с {{ profile_user.created_at[:10] }}
+            </p>
+
             {% if profile_user.bio %}
             <p class="profile-bio">{{ profile_user.bio }}</p>
             {% endif %}
@@ -42,6 +44,7 @@
             {% if current_user %}
                 {% if current_user.id == profile_user.id %}
                 <div class="profile-actions">
+                    <button class="btn" id="open-create-profile-modal">+ Создать пост</button>
                     <a href="/profile/settings" class="btn btn-secondary">⚙️ Настройки</a>
                 </div>
                 {% else %}
@@ -104,18 +107,18 @@
     <div class="card-header">
         <h3 class="card-title">📺 Каналы</h3>
     </div>
-    <div class="card-body" style="padding: 0;">
+    <div>
         {% for channel in channels %}
-        <a href="/channel/{{ channel.id }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border-color);">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <a href="/channel/{{ channel.id }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); text-decoration: none; transition: var(--transition);">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; overflow: hidden; flex-shrink: 0;">
                 {% if channel.avatar %}
-                <img src="{{ url_for('uploaded_file', filename=channel.avatar) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                <img src="{{ url_for('uploaded_file', filename=channel.avatar) }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
                 {% else %}
                 📺
                 {% endif %}
             </div>
             <div>
-                <div style="font-weight: 600;">{{ channel.name }}</div>
+                <div style="font-weight: 600; color: var(--text-primary);">{{ channel.name }}</div>
                 <div style="font-size: 0.85rem; color: var(--text-muted);">{{ channel.sub_count }} подписчиков</div>
             </div>
         </a>
@@ -137,11 +140,68 @@
 </div>
 {% endfor %}
 
+{% if current_user and current_user.id == profile_user.id %}
+<div class="modal-overlay" id="create-profile-modal">
+    <div class="modal create-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">✨ Создать публикацию</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="create-options">
+                <a href="/create/post" class="create-option">
+                    <div class="create-option-icon">📝</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Текстовый пост</span>
+                        <span class="create-option-desc">Поделитесь мыслями</span>
+                    </div>
+                </a>
+                <a href="/create/video" class="create-option">
+                    <div class="create-option-icon">📹</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Видео</span>
+                        <span class="create-option-desc">Загрузите видеоролик</span>
+                    </div>
+                </a>
+                <a href="/create/photo" class="create-option">
+                    <div class="create-option-icon">🖼️</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Фото</span>
+                        <span class="create-option-desc">Опубликуйте изображения</span>
+                    </div>
+                </a>
+                <a href="/create/audio" class="create-option">
+                    <div class="create-option-icon">🎵</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Аудио</span>
+                        <span class="create-option-desc">Поделитесь музыкой</span>
+                    </div>
+                </a>
+                <a href="/create/article" class="create-option">
+                    <div class="create-option-icon">📄</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">Статья</span>
+                        <span class="create-option-desc">Напишите лонгрид</span>
+                    </div>
+                </a>
+                <a href="/create/story" class="create-option">
+                    <div class="create-option-icon">⏱️</div>
+                    <div class="create-option-info">
+                        <span class="create-option-title">История</span>
+                        <span class="create-option-desc">Исчезнет через 24 часа</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if current_user and current_user.role in ['admin', 'moderator'] and current_user.id != profile_user.id %}
 <div class="modal-overlay" id="ban-modal">
     <div class="modal">
         <div class="modal-header">
-            <h3 class="modal-title">Забанить пользователя</h3>
+            <h3 class="modal-title">🚫 Забанить {{ profile_user.username }}</h3>
             <button class="modal-close">&times;</button>
         </div>
         <form action="/admin/users/{{ profile_user.id }}/ban" method="POST">
@@ -156,7 +216,7 @@
                     </select>
                 </div>
                 <div class="form-group" id="duration-group">
-                    <label class="form-label">Длительность (часы)</label>
+                    <label class="form-label">Длительность</label>
                     <select name="duration" class="form-control">
                         <option value="1">1 час</option>
                         <option value="24">24 часа</option>
@@ -176,11 +236,45 @@
         </form>
     </div>
 </div>
+{% endif %}
+{% endblock %}
 
+{% block scripts %}
 <script>
-document.getElementById('ban-type-select')?.addEventListener('change', function() {
-    document.getElementById('duration-group').style.display = this.value === 'permanent' ? 'none' : 'block';
+document.addEventListener('DOMContentLoaded', function() {
+    const createModal = document.getElementById('create-profile-modal');
+    const openCreateBtn = document.getElementById('open-create-profile-modal');
+
+    if (openCreateBtn && createModal) {
+        openCreateBtn.addEventListener('click', function() {
+            createModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        createModal.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                createModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        });
+
+        createModal.addEventListener('click', function(e) {
+            if (e.target === createModal) {
+                createModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    const banTypeSelect = document.getElementById('ban-type-select');
+    if (banTypeSelect) {
+        banTypeSelect.addEventListener('change', function() {
+            const durationGroup = document.getElementById('duration-group');
+            if (durationGroup) {
+                durationGroup.style.display = this.value === 'permanent' ? 'none' : 'block';
+            }
+        });
+    }
 });
 </script>
-{% endif %}
 {% endblock %}

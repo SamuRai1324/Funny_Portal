@@ -9,8 +9,6 @@ let cooldownInterval = null;
 function initGlobalChat() {
     const chatContainer = document.getElementById('global-chat-messages');
     const chatForm = document.getElementById('global-chat-form');
-    const chatInput = document.getElementById('global-chat-input');
-    const cooldownDisplay = document.getElementById('chat-cooldown');
 
     if (!chatContainer || !chatForm) return;
 
@@ -46,9 +44,9 @@ async function refreshChat() {
         if (response.ok) {
             const messages = await response.json();
             const wasAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 50;
-            
+
             updateChatMessages(chatContainer, messages);
-            
+
             if (wasAtBottom) {
                 scrollToBottom(chatContainer);
             }
@@ -76,11 +74,11 @@ function createChatMessageElement(msg) {
     const div = document.createElement('div');
     div.className = 'chat-message';
     div.dataset.messageId = msg.id;
-    
-    const avatarContent = msg.avatar 
+
+    const avatarContent = msg.avatar
         ? `<img src="/uploads/${msg.avatar}" alt="">`
-        : msg.username[0].toUpperCase();
-    
+        : `<span>${msg.username[0].toUpperCase()}</span>`;
+
     div.innerHTML = `
         <div class="chat-message-avatar">${avatarContent}</div>
         <div class="chat-message-content">
@@ -88,7 +86,7 @@ function createChatMessageElement(msg) {
             <div class="chat-message-text">${escapeHtml(msg.content)}</div>
         </div>
     `;
-    
+
     return div;
 }
 
@@ -158,10 +156,10 @@ function initPrivateChat() {
 
     const messageForm = document.getElementById('private-message-form');
     if (messageForm) {
-        messageForm.addEventListener('submit', function() {
+        messageForm.addEventListener('submit', function(e) {
             const input = this.querySelector('input[name="content"]');
             if (input && !input.value.trim()) {
-                event.preventDefault();
+                e.preventDefault();
             }
         });
     }

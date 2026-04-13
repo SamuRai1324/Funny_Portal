@@ -3,29 +3,16 @@
 {% block title %}Сообщения - Aura Nexus{% endblock %}
 
 {% block content %}
-<h1 class="page-title">
-    <span class="nav-icon page-title-icon">
-        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-        <span class="emoji-fallback" style="display:none;">✉️</span>
-    </span>
-    Сообщения
-</h1>
+<h1 class="page-title">✉️ Сообщения</h1>
 
 <div class="messages-layout">
-    <!-- ЛЕВАЯ КОЛОНКА - Личные переписки -->
     <div class="messages-conversations">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">
-                    <span class="nav-icon">
-                        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">💬</span>
-                    </span>
-                    Личные сообщения
-                </h3>
+                <h3 class="card-title">💬 Личные сообщения</h3>
+                <button class="btn btn-sm" id="open-new-dialog-modal">+ Новый диалог</button>
             </div>
+
             {% if conversations %}
             <div class="conversations-list">
                 {% for conv in conversations %}
@@ -56,12 +43,14 @@
                 <div class="empty-state-icon">💬</div>
                 <h3 class="empty-state-title">Диалогов пока нет</h3>
                 <p>Напишите кому-нибудь первым!</p>
+                <button class="btn" style="margin-top: 1rem;" id="open-new-dialog-modal-2">
+                    + Начать диалог
+                </button>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- ПРАВАЯ КОЛОНКА - Глобальный чат -->
     <div class="messages-global-chat">
         <div class="card chat-box-large">
             <div class="card-header">
@@ -97,38 +86,34 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="new-dialog-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">💬 Новый диалог</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Поиск пользователя</label>
+                <input type="text" id="user-search-input" class="form-control" placeholder="Введите имя пользователя...">
+            </div>
+            <div id="user-search-results" class="user-search-results"></div>
+        </div>
+    </div>
+</div>
+
 <style>
-.page-title {
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.page-title-icon {
-    width: 32px !important;
-    height: 32px !important;
-}
-
-.page-title-icon img {
-    width: 32px !important;
-    height: 32px !important;
-}
-
-/* ═══ ДВУХКОЛОНОЧНЫЙ LAYOUT ═══ */
 .messages-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
 }
 
-/* Левая колонка - Личные переписки */
-.messages-conversations {
-    min-width: 0;
-}
+.messages-conversations { min-width: 0; }
+.messages-global-chat { min-width: 0; }
 
 .conversations-list {
-    max-height: 500px;
+    max-height: 520px;
     overflow-y: auto;
 }
 
@@ -142,41 +127,27 @@
     transition: var(--transition);
 }
 
-.conversation-item:last-child {
-    border-bottom: none;
-}
+.conversation-item:last-child { border-bottom: none; }
+.conversation-item:hover { background: var(--bg-tertiary); }
+.conversation-item.unread { background: var(--accent-purple-alpha); }
 
-.conversation-item:hover {
-    background: var(--bg-tertiary);
-}
-
-.conversation-item.unread {
-    background: var(--accent-purple-alpha);
-}
-
-.conversation-avatar-wrap {
-    position: relative;
-}
+.conversation-avatar-wrap { position: relative; }
 
 .conversation-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     font-size: 1.25rem;
     overflow: hidden;
-    color: white;
+    color: var(--text-primary);
 }
 
-.conversation-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+.conversation-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .unread-badge {
     position: absolute;
@@ -191,10 +162,7 @@
     text-align: center;
 }
 
-.conversation-info {
-    flex: 1;
-    min-width: 0;
-}
+.conversation-info { flex: 1; min-width: 0; }
 
 .conversation-name {
     font-weight: 600;
@@ -209,15 +177,10 @@
     text-overflow: ellipsis;
 }
 
-/* Правая колонка - Глобальный чат */
-.messages-global-chat {
-    min-width: 0;
-}
-
 .chat-box-large {
     display: flex;
     flex-direction: column;
-    height: 550px;
+    height: 580px;
 }
 
 .chat-box-large .chat-messages {
@@ -238,7 +201,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -246,30 +209,13 @@
     font-weight: 600;
     flex-shrink: 0;
     overflow: hidden;
-}
-
-.chat-box-large .chat-message-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-box-large .chat-message-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.chat-box-large .chat-message-author {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--accent-green);
-}
-
-.chat-box-large .chat-message-text {
-    font-size: 0.95rem;
     color: var(--text-primary);
-    word-break: break-word;
 }
+
+.chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.chat-box-large .chat-message-content { flex: 1; min-width: 0; }
+.chat-box-large .chat-message-author { font-size: 0.85rem; font-weight: 600; color: var(--accent-green); display: block; }
+.chat-box-large .chat-message-text { font-size: 0.95rem; color: var(--text-primary); word-break: break-word; }
 
 .chat-box-large .chat-input {
     display: flex;
@@ -306,6 +252,7 @@
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
+    flex-shrink: 0;
 }
 
 .chat-box-large .chat-input button:hover {
@@ -313,15 +260,131 @@
     box-shadow: var(--shadow-glow-green);
 }
 
-/* ═══ RESPONSIVE ═══ */
+.user-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+}
+
+.user-search-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.user-search-item:hover {
+    background: var(--border-color);
+    border-color: var(--accent-green);
+}
+
+.user-search-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    overflow: hidden;
+    flex-shrink: 0;
+    color: var(--text-primary);
+}
+
+.user-search-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.user-search-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 @media (max-width: 900px) {
-    .messages-layout {
-        grid-template-columns: 1fr;
-    }
-    
-    .chat-box-large {
-        height: 400px;
-    }
+    .messages-layout { grid-template-columns: 1fr; }
+    .chat-box-large { height: 400px; }
 }
 </style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('new-dialog-modal');
+    const openBtns = [
+        document.getElementById('open-new-dialog-modal'),
+        document.getElementById('open-new-dialog-modal-2')
+    ].filter(Boolean);
+
+    openBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('user-search-input').focus();
+        });
+    });
+
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    });
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    const searchInput = document.getElementById('user-search-input');
+    const resultsContainer = document.getElementById('user-search-results');
+    let searchTimeout = null;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length < 1) {
+            resultsContainer.innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(async function() {
+            try {
+                const response = await fetch(`/api/search/users?q=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const users = await response.json();
+                    if (users.length === 0) {
+                        resultsContainer.innerHTML = '<p class="text-muted" style="padding: 0.5rem;">Пользователи не найдены</p>';
+                        return;
+                    }
+                    resultsContainer.innerHTML = users.map(u => `
+                        <a href="/messages/${u.id}" class="user-search-item">
+                            <div class="user-search-avatar">
+                                ${u.avatar
+                                    ? `<img src="/uploads/${u.avatar}" alt="">`
+                                    : u.username[0].toUpperCase()
+                                }
+                            </div>
+                            <div class="user-search-name">${u.username}</div>
+                        </a>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('User search error:', error);
+            }
+        }, 300);
+    });
+});
+</script>
 {% endblock %}

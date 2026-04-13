@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initFileUploads();
     initVideoPreview();
     initScrollToTop();
-    initTimeAgo();
+    initLocalTime();
+    initReadMore();
 });
 
 function initDropdowns() {
@@ -46,7 +47,7 @@ function initModals() {
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', function() {
             const modal = this.closest('.modal-overlay');
-            closeModal(modal);
+            if (modal) closeModal(modal);
         });
     });
 
@@ -75,10 +76,14 @@ function openModal(modalId) {
 function initFileUploads() {
     document.querySelectorAll('.file-upload').forEach(upload => {
         const input = upload.querySelector('input[type="file"]');
+        if (!input) return;
+
         const preview = upload.querySelector('.file-preview');
         const text = upload.querySelector('.file-upload-text');
 
-        upload.addEventListener('click', () => input.click());
+        upload.addEventListener('click', function(e) {
+            if (e.target !== input) input.click();
+        });
 
         upload.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -106,15 +111,10 @@ function initFileUploads() {
 
 function handleFileSelect(input, preview, text) {
     const files = Array.from(input.files);
-    
     if (files.length === 0) return;
 
     if (text) {
-        if (files.length === 1) {
-            text.textContent = files[0].name;
-        } else {
-            text.textContent = `Выбрано файлов: ${files.length}`;
-        }
+        text.textContent = files.length === 1 ? files[0].name : `Выбрано файлов: ${files.length}`;
     }
 
     if (preview) {
@@ -123,20 +123,20 @@ function handleFileSelect(input, preview, text) {
             if (file.type.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(file);
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '200px';
-                img.style.borderRadius = '8px';
-                img.style.marginTop = '10px';
+                img.style.cssText = 'max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;display:block;margin-left:auto;margin-right:auto;';
                 preview.appendChild(img);
             } else if (file.type.startsWith('video/')) {
                 const video = document.createElement('video');
                 video.src = URL.createObjectURL(file);
                 video.controls = true;
-                video.style.maxWidth = '100%';
-                video.style.maxHeight = '200px';
-                video.style.borderRadius = '8px';
-                video.style.marginTop = '10px';
+                video.style.cssText = 'max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;display:block;';
                 preview.appendChild(video);
+            } else if (file.type.startsWith('audio/')) {
+                const audio = document.createElement('audio');
+                audio.src = URL.createObjectURL(file);
+                audio.controls = true;
+                audio.style.cssText = 'width:100%;margin-top:10px;';
+                preview.appendChild(audio);
             }
         });
     }
@@ -193,64 +193,75 @@ function initScrollToTop() {
     });
 }
 
-function initTimeAgo() {
-    document.querySelectorAll('[data-time]').forEach(el => {
-        const time = new Date(el.dataset.time);
-        el.textContent = timeAgo(time);
+function initLocalTime() {
+    document.querySelectorAll('[data-utc]').forEach(el => {
+        const utcStr = el.dataset.utc;
+        if (!utcStr) return;
+
+        const date = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
+        if (isNaN(date.getTime())) return;
+
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+
+        if (diff < 60) {
+            el.textContent = 'только что';
+        } else if (diff < 3600) {
+            el.textContent = `${Math.floor(diff / 60)} мин назад`;
+        } else if (diff < 86400) {
+            el.textContent = `${Math.floor(diff / 3600)} ч назад`;
+        } else if (diff < 604800) {
+            el.textContent = `${Math.floor(diff / 86400)} д назад`;
+        } else {
+            el.textContent = date.toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
     });
 }
 
-function timeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    
-    const intervals = {
-        год: 31536000,
-        месяц: 2592000,
-        неделя: 604800,
-        день: 86400,
-        час: 3600,
-        минута: 60
-    };
+function initReadMore() {
+    document.querySelectorAll('.read-more-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const postCard = this.closest('.post-card');
+            const postText = postCard.querySelector('.post-text');
 
-    for (const [name, secondsInUnit] of Object.entries(intervals)) {
-        const interval = Math.floor(seconds / secondsInUnit);
-        if (interval >= 1) {
-            return `${interval} ${pluralize(interval, name)} назад`;
-        }
-    }
-    
-    return 'только что';
-}
-
-function pluralize(n, word) {
-    const forms = {
-        'год': ['год', 'года', 'лет'],
-        'месяц': ['месяц', 'месяца', 'месяцев'],
-        'неделя': ['неделю', 'недели', 'недель'],
-        'день': ['день', 'дня', 'дней'],
-        'час': ['час', 'часа', 'часов'],
-        'минута': ['минуту', 'минуты', 'минут']
-    };
-    
-    const cases = [2, 0, 1, 1, 1, 2];
-    const form = forms[word];
-    return form[(n % 100 > 4 && n % 100 < 20) ? 2 : cases[Math.min(n % 10, 5)]];
+            if (postText.classList.contains('truncated')) {
+                postText.classList.remove('truncated');
+                postText.classList.add('expanded');
+                this.textContent = 'Свернуть ↑';
+            } else {
+                postText.classList.add('truncated');
+                postText.classList.remove('expanded');
+                this.textContent = 'Читать далее ↓';
+                postCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    });
 }
 
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-        <span class="toast-icon">${type === 'success' ? '✓' : type === 'danger' ? '✕' : 'ℹ'}</span>
-        <span class="toast-message">${message}</span>
-    `;
+
+    const colors = {
+        success: 'var(--accent-green)',
+        danger: 'var(--danger)',
+        warning: 'var(--warning)',
+        info: 'var(--accent-blue)'
+    };
+
     toast.style.cssText = `
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%) translateY(100px);
         background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
+        border: 1px solid ${colors[type] || colors.info};
         padding: 1rem 1.5rem;
         border-radius: 12px;
         display: flex;
@@ -259,10 +270,15 @@ function showToast(message, type = 'info') {
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         z-index: 10000;
         transition: transform 0.3s ease;
+        color: var(--text-primary);
+        font-size: 0.95rem;
     `;
 
+    const icons = { success: '✓', danger: '✕', warning: '⚠️', info: 'ℹ' };
+    toast.innerHTML = `<span style="color:${colors[type] || colors.info}">${icons[type] || icons.info}</span><span>${message}</span>`;
+
     document.body.appendChild(toast);
-    
+
     requestAnimationFrame(() => {
         toast.style.transform = 'translateX(-50%) translateY(0)';
     });
@@ -272,32 +288,6 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-
-// ===== ЧИТАТЬ ДАЛЕЕ / СВЕРНУТЬ =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработчик для кнопок "Читать далее"
-    document.querySelectorAll('.read-more-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const postCard = this.closest('.post-card');
-            const postText = postCard.querySelector('.post-text');
-            
-            if (postText.classList.contains('truncated')) {
-                // Раскрываем текст
-                postText.classList.remove('truncated');
-                postText.classList.add('expanded');
-                this.textContent = 'Свернуть ↑';
-            } else {
-                // Сворачиваем текст
-                postText.classList.add('truncated');
-                postText.classList.remove('expanded');
-                this.textContent = 'Читать далее ↓';
-                
-                // Скроллим к посту чтобы он был виден
-                postCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        });
-    });
-});
 
 function confirmAction(message) {
     return new Promise((resolve) => {
@@ -317,7 +307,7 @@ function confirmAction(message) {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(overlay);
         document.body.style.overflow = 'hidden';
 

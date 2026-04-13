@@ -5,8 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
 let notificationCount = 0;
 
 function initNotifications() {
-    updateNotificationBadge();
-    
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        notificationCount = parseInt(badge.textContent) || 0;
+    }
+
     setInterval(checkNewNotifications, 30000);
 }
 
@@ -16,7 +19,7 @@ async function checkNewNotifications() {
         if (response.ok) {
             const data = await response.json();
             if (data.count > notificationCount) {
-                showNewNotificationToast(data.count - notificationCount);
+                showToast(`У вас ${data.count - notificationCount} новых уведомлений`, 'info');
             }
             notificationCount = data.count;
             updateNotificationBadge(data.count);
@@ -35,12 +38,6 @@ function updateNotificationBadge(count) {
         } else {
             badge.style.display = 'none';
         }
-    }
-}
-
-function showNewNotificationToast(count) {
-    if (typeof showToast === 'function') {
-        showToast(`У вас ${count} новых уведомлений`, 'info');
     }
 }
 

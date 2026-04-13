@@ -19,18 +19,10 @@
     </div>
 
     <div class="chat-page-layout">
-        <!-- ЛЕВАЯ КОЛОНКА - Личный чат -->
         <div class="chat-private-section">
             <div class="card chat-container">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <span class="nav-icon">
-                            <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                            <span class="emoji-fallback" style="display:none;">💬</span>
-                        </span>
-                        Диалог с {{ other_user.username }}
-                    </h3>
+                    <h3 class="card-title">💬 Диалог с {{ other_user.username }}</h3>
                 </div>
                 <div id="private-messages" class="private-messages-list">
                     {% for msg in messages %}
@@ -44,7 +36,9 @@
                         </div>
                         <div class="private-message-bubble">
                             <div class="private-message-text">{{ msg.content }}</div>
-                            <div class="private-message-time">{{ msg.created_at[11:16] }}</div>
+                            <div class="private-message-time" data-utc="{{ msg.created_at }}">
+                                {{ msg.created_at[11:16] }}
+                            </div>
                         </div>
                     </div>
                     {% else %}
@@ -62,7 +56,6 @@
             </div>
         </div>
 
-        <!-- ПРАВАЯ КОЛОНКА - Глобальный чат -->
         <div class="chat-global-section">
             <div class="card chat-box-large">
                 <div class="card-header">
@@ -117,9 +110,7 @@
     font-size: 0.9rem;
 }
 
-.back-link:hover {
-    color: var(--accent-green);
-}
+.back-link:hover { color: var(--accent-green); }
 
 .chat-user-info {
     display: flex;
@@ -131,43 +122,36 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     font-weight: 600;
-    color: white;
+    color: var(--text-primary);
 }
 
-.chat-user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+.chat-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .chat-user-name {
     font-weight: 600;
     font-size: 1.1rem;
+    color: var(--text-primary);
 }
 
-/* ═══ LAYOUT С ДВУМЯ КОЛОНКАМИ ═══ */
+.chat-user-name:hover { color: var(--accent-green); }
+
 .chat-page-layout {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 1.5rem;
 }
 
-.chat-private-section {
-    min-width: 0;
-}
-
-.chat-global-section {
-    min-width: 0;
-}
+.chat-private-section { min-width: 0; }
+.chat-global-section { min-width: 0; }
 
 .chat-container {
-    height: 500px;
+    height: 520px;
     display: flex;
     flex-direction: column;
 }
@@ -186,15 +170,13 @@
     gap: 0.75rem;
 }
 
-.private-message.own-message {
-    flex-direction: row-reverse;
-}
+.private-message.own-message { flex-direction: row-reverse; }
 
 .private-message-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -202,14 +184,10 @@
     flex-shrink: 0;
     overflow: hidden;
     font-weight: 600;
-    color: white;
+    color: var(--text-primary);
 }
 
-.private-message-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+.private-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .private-message-bubble {
     max-width: 70%;
@@ -228,6 +206,7 @@
 .private-message-text {
     font-size: 0.95rem;
     word-break: break-word;
+    color: var(--text-primary);
 }
 
 .private-message-time {
@@ -237,9 +216,7 @@
     text-align: right;
 }
 
-.own-message .private-message-time {
-    color: rgba(255, 255, 255, 0.7);
-}
+.own-message .private-message-time { color: rgba(255,255,255,0.6); }
 
 .chat-empty {
     flex: 1;
@@ -260,16 +237,12 @@
     border-radius: 20px;
 }
 
-.send-btn {
-    border-radius: 20px;
-    padding: 0 1.5rem;
-}
+.send-btn { border-radius: 20px; padding: 0 1.5rem; }
 
-/* Глобальный чат справа */
 .chat-box-large {
     display: flex;
     flex-direction: column;
-    height: 500px;
+    height: 520px;
 }
 
 .chat-box-large .chat-messages {
@@ -290,7 +263,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--bg-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -298,30 +271,13 @@
     font-weight: 600;
     flex-shrink: 0;
     overflow: hidden;
-}
-
-.chat-box-large .chat-message-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-box-large .chat-message-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.chat-box-large .chat-message-author {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--accent-green);
-}
-
-.chat-box-large .chat-message-text {
-    font-size: 0.9rem;
     color: var(--text-primary);
-    word-break: break-word;
 }
+
+.chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.chat-box-large .chat-message-content { flex: 1; min-width: 0; }
+.chat-box-large .chat-message-author { font-size: 0.8rem; font-weight: 600; color: var(--accent-green); display: block; }
+.chat-box-large .chat-message-text { font-size: 0.9rem; color: var(--text-primary); word-break: break-word; }
 
 .chat-box-large .chat-input {
     display: flex;
@@ -358,36 +314,45 @@
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
+    flex-shrink: 0;
 }
 
 .chat-box-large .chat-input button:hover {
     transform: scale(1.1);
+    box-shadow: var(--shadow-glow-green);
 }
 
-/* ═══ RESPONSIVE ═══ */
 @media (max-width: 900px) {
-    .chat-page-layout {
-        grid-template-columns: 1fr;
-    }
-    
+    .chat-page-layout { grid-template-columns: 1fr; }
     .chat-container,
-    .chat-box-large {
-        height: 400px;
-    }
+    .chat-box-large { height: 400px; }
 }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-var messages = document.getElementById('private-messages');
-if (messages) {
-    messages.scrollTop = messages.scrollHeight;
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const privateMessages = document.getElementById('private-messages');
+    if (privateMessages) {
+        privateMessages.scrollTop = privateMessages.scrollHeight;
+    }
 
-var globalMessages = document.getElementById('global-chat-messages');
-if (globalMessages) {
-    globalMessages.scrollTop = globalMessages.scrollHeight;
-}
+    const globalMessages = document.getElementById('global-chat-messages');
+    if (globalMessages) {
+        globalMessages.scrollTop = globalMessages.scrollHeight;
+    }
+
+    document.querySelectorAll('.private-message-time[data-utc]').forEach(function(el) {
+        const utcStr = el.dataset.utc;
+        if (!utcStr) return;
+        const date = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
+        if (isNaN(date.getTime())) return;
+        el.textContent = date.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    });
+});
 </script>
 {% endblock %}

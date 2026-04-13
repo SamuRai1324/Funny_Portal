@@ -18,8 +18,10 @@
         </div>
         <div class="profile-details">
             <h1 class="profile-name">{{ channel.name }}</h1>
-            <p class="profile-username">Создатель: <a href="/profile/{{ channel.creator_name }}">@{{ channel.creator_name }}</a></p>
-            
+            <p class="profile-username">
+                Создатель: <a href="/profile/{{ channel.creator_name }}">@{{ channel.creator_name }}</a>
+            </p>
+
             {% if channel.description %}
             <p class="profile-bio">{{ channel.description }}</p>
             {% endif %}
@@ -37,23 +39,26 @@
 
             {% if current_user %}
             <div class="profile-actions">
-                <!-- КНОПКА СОЗДАНИЯ ДЛЯ ВЛАДЕЛЬЦА -->
-                {% if current_user.username == channel.creator_name or current_user.role == 'admin' %}
+                {% if is_owner %}
                 <button class="btn" id="open-channel-create-modal">
-                    <span>+</span>
-                    <span>Создать пост</span>
+                    + Создать пост
                 </button>
-                {% endif %}
-                
-                <button class="btn {{ 'btn-secondary' if is_subscribed else '' }}" 
-                        id="subscribe-btn" 
+                <a href="/channel/{{ channel.id }}/edit" class="btn btn-secondary">
+                    ✏️ Редактировать
+                </a>
+                {% else %}
+                <button class="btn {% if is_subscribed %}btn-secondary{% endif %}"
+                        id="subscribe-btn"
                         data-channel-id="{{ channel.id }}">
                     {% if is_subscribed %}✓ Подписан{% else %}Подписаться{% endif %}
                 </button>
-                
+                {% endif %}
+
                 {% if current_user.role == 'admin' %}
                 <form action="/admin/channels/{{ channel.id }}/delete" method="POST" class="inline-form">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить канал?')">🗑️ Удалить</button>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить канал?')">
+                        🗑️ Удалить
+                    </button>
                 </form>
                 {% endif %}
             </div>
@@ -70,7 +75,7 @@
 <div class="empty-state">
     <div class="empty-state-icon">📭</div>
     <h3 class="empty-state-title">Публикаций пока нет</h3>
-    {% if current_user and (current_user.username == channel.creator_name or current_user.role == 'admin') %}
+    {% if is_owner %}
     <p>Создайте первую публикацию для вашего канала!</p>
     <button class="btn" id="open-channel-create-modal-2" style="margin-top: 1rem;">
         + Создать пост
@@ -79,13 +84,12 @@
 </div>
 {% endfor %}
 
-<!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ПОСТА В КАНАЛЕ -->
-{% if current_user and (current_user.username == channel.creator_name or current_user.role == 'admin') %}
+{% if is_owner %}
 <div class="modal-overlay" id="channel-create-modal">
     <div class="modal create-modal">
         <div class="modal-header">
             <h3 class="modal-title">✨ Создать в "{{ channel.name }}"</h3>
-            <button class="modal-close" id="close-channel-create-modal">&times;</button>
+            <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="create-options">
@@ -129,128 +133,61 @@
     </div>
 </div>
 {% endif %}
-
-<style>
-/* ===== МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ===== */
-.create-modal {
-    max-width: 450px;
-    width: 95%;
-}
-
-.create-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.create-option {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    transition: var(--transition);
-    border: 1px solid transparent;
-}
-
-.create-option:hover {
-    background: var(--bg-primary);
-    border-color: var(--accent-purple);
-    transform: translateX(5px);
-}
-
-.create-option-icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent-gradient);
-    border-radius: var(--radius-md);
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.create-option-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.create-option-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-.create-option-desc {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Подписка
-document.getElementById('subscribe-btn')?.addEventListener('click', async function() {
-    var channelId = this.getAttribute('data-channel-id');
-    var btn = this;
-    
-    try {
-        var response = await fetch('/channel/' + channelId + '/subscribe', { method: 'POST' });
-        if (response.ok) {
-            var data = await response.json();
-            if (data.action === 'subscribed') {
-                btn.innerHTML = '✓ Подписан';
-                btn.classList.add('btn-secondary');
-            } else {
-                btn.innerHTML = 'Подписаться';
-                btn.classList.remove('btn-secondary');
-            }
-        }
-    } catch (error) {
-        console.error('Subscribe error:', error);
-    }
-});
-
-// Модальное окно создания поста в канале
 document.addEventListener('DOMContentLoaded', function() {
+    const subscribeBtn = document.getElementById('subscribe-btn');
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', async function() {
+            const channelId = this.dataset.channelId;
+            try {
+                const response = await fetch('/channel/' + channelId + '/subscribe', { method: 'POST' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.action === 'subscribed') {
+                        this.textContent = '✓ Подписан';
+                        this.classList.add('btn-secondary');
+                    } else {
+                        this.textContent = 'Подписаться';
+                        this.classList.remove('btn-secondary');
+                    }
+                }
+            } catch (error) {
+                console.error('Subscribe error:', error);
+            }
+        });
+    }
+
     const modal = document.getElementById('channel-create-modal');
-    const closeBtn = document.getElementById('close-channel-create-modal');
-    
-    // Все кнопки открытия (основная и в empty-state)
-    const openBtns = [
-        document.getElementById('open-channel-create-modal'),
-        document.getElementById('open-channel-create-modal-2')
-    ].filter(btn => btn !== null);
-    
     if (modal) {
-        // Открытие
+        const openBtns = [
+            document.getElementById('open-channel-create-modal'),
+            document.getElementById('open-channel-create-modal-2')
+        ].filter(Boolean);
+
         openBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             });
         });
-        
-        // Закрытие по кнопке
-        closeBtn?.addEventListener('click', function() {
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
+
+        modal.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
         });
-        
-        // Закрытие по клику на overlay
+
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 modal.classList.remove('active');
                 document.body.style.overflow = '';
             }
         });
-        
-        // Закрытие по Escape
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
                 modal.classList.remove('active');

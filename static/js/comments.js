@@ -7,25 +7,39 @@ function initComments() {
         btn.addEventListener('click', function() {
             const postId = this.dataset.postId;
             const commentsSection = document.getElementById(`comments-${postId}`);
-            
+
             if (commentsSection) {
                 commentsSection.classList.toggle('hidden');
-                
+
                 if (!commentsSection.classList.contains('hidden') && !commentsSection.dataset.loaded) {
-                    loadComments(postId, commentsSection);
+                    loadComments(postId);
                 }
             }
         });
     });
 
-    document.querySelectorAll('.comment-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const input = this.querySelector('input[name="content"]');
-            if (!input.value.trim()) {
-                e.preventDefault();
-                return;
-            }
-        });
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+
+        if (form.classList.contains('comment-form')) {
+            e.preventDefault();
+            const postId = form.dataset.postId;
+            const parentId = form.dataset.parentId || null;
+            const input = form.querySelector('input[name="content"]');
+            const content = input.value.trim();
+
+            if (!content) return;
+
+            submitComment(postId, content, parentId, function() {
+                input.value = '';
+                loadComments(postId);
+
+                const countEl = document.querySelector(`.comment-count-${postId}`);
+                if (countEl) {
+                    countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+                }
+            });
+        }
     });
 
     document.addEventListener('click', function(e) {
@@ -37,34 +51,57 @@ function initComments() {
     });
 }
 
-async function loadComments(postId, container) {
+async function submitComment(postId, content, parentId, callback) {
+    const formData = new FormData();
+    formData.append('content', content);
+    if (parentId) {
+        formData.append('parent_id', parentId);
+    }
+
+    try {
+        const response = await fetch(`/api/comment/${postId}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            if (callback) callback();
+        } else if (response.status === 401) {
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Comment submit error:', error);
+    }
+}
+
+async function loadComments(postId) {
+    const container = document.getElementById(`comments-${postId}`);
+    if (!container) return;
+
     try {
         const response = await fetch(`/api/comments/${postId}`);
         if (response.ok) {
             const comments = await response.json();
-            renderComments(comments, container, postId);
+            const listEl = document.getElementById(`comments-list-${postId}`);
+            if (listEl) {
+                if (comments.length === 0) {
+                    listEl.innerHTML = '<p class="text-muted" style="padding: 1rem 0;">Комментариев пока нет</p>';
+                } else {
+                    listEl.innerHTML = comments.map(c => renderComment(c, postId)).join('');
+                }
+            }
             container.dataset.loaded = 'true';
         }
     } catch (error) {
         console.error('Load comments error:', error);
-        container.innerHTML = '<p class="text-muted">Ошибка загрузки комментариев</p>';
     }
 }
 
-function renderComments(comments, container, postId) {
-    const commentsHtml = comments.map(comment => renderComment(comment, postId)).join('');
-    
-    const existingForm = container.querySelector('.comment-form');
-    const formHtml = existingForm ? existingForm.outerHTML : '';
-    
-    container.innerHTML = formHtml + (commentsHtml || '<p class="text-muted" style="padding: 1rem 0;">Комментариев пока нет</p>');
-}
-
 function renderComment(comment, postId) {
-    const avatarContent = comment.avatar 
+    const avatarContent = comment.avatar
         ? `<img src="/uploads/${comment.avatar}" alt="">`
         : comment.username[0].toUpperCase();
-    
+
     const repliesHtml = comment.replies && comment.replies.length > 0
         ? `<div class="comment-replies">${comment.replies.map(r => renderComment(r, postId)).join('')}</div>`
         : '';
@@ -97,9 +134,8 @@ function toggleReplyForm(commentId, postId) {
     if (container.style.display === 'none') {
         container.style.display = 'block';
         container.innerHTML = `
-            <form action="/api/comment/${postId}" method="POST" class="comment-form" style="margin-top: 0.75rem;">
-                <input type="hidden" name="parent_id" value="${commentId}">
-                <input type="text" name="content" placeholder="Ваш ответ..." class="form-control" style="margin-bottom: 0;">
+            <form class="comment-form reply-form" data-post-id="${postId}" data-parent-id="${commentId}" style="margin-top: 0.75rem;">
+                <input type="text" name="content" placeholder="Ваш ответ..." class="form-control" style="margin-bottom: 0.5rem;">
                 <button type="submit" class="btn btn-sm">Отправить</button>
             </form>
         `;
@@ -110,7 +146,7 @@ function toggleReplyForm(commentId, postId) {
 }
 
 function formatTime(dateString) {
-    const date = new Date(dateString);
+    const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
     const now = new Date();
     const diff = Math.floor((now - date) / 1000);
 
@@ -118,7 +154,7 @@ function formatTime(dateString) {
     if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
     if (diff < 604800) return `${Math.floor(diff / 86400)} д назад`;
-    
+
     return date.toLocaleDateString('ru-RU');
 }
 
