@@ -7,19 +7,12 @@ DATABASE = 'Web_DB.db'
 def create_test_data():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
-    
+
     print("🚀 Создание тестовых данных...")
-    
-    # ==================== ПОЛЬЗОВАТЕЛИ ====================
-    # 1 админ + 1 модератор + 18 юзеров = 20 человек
+
     users_data = [
-        # Админ (1)
         ('admin', 'admin@auranexus.com', 'admin', 'admin', 'Администратор платформы 👑'),
-        
-        # Модератор (1)
         ('moderator', 'moderator@auranexus.com', 'mod123', 'moderator', 'Слежу за порядком в сообществе 🛡️'),
-        
-        # Обычные пользователи (18)
         ('john_doe', 'john@mail.ru', 'pass123', 'user', 'Люблю программирование и кофе ☕'),
         ('alice_wonder', 'alice@mail.ru', 'pass123', 'user', 'Фотограф и путешественница 📸'),
         ('bob_builder', 'bob@mail.ru', 'pass123', 'user', 'Строю миры из кода 🏗️'),
@@ -39,11 +32,10 @@ def create_test_data():
         ('elena_yoga', 'elena@mail.ru', 'pass123', 'user', 'Йога и медитация 🧘'),
         ('andrey_car', 'andrey@mail.ru', 'pass123', 'user', 'Автолюбитель 🚗'),
     ]
-    
+
     user_ids = []
     for username, email, password, role, bio in users_data:
         try:
-            # ⚠️ ПАРОЛЬ БЕЗ ШИФРОВАНИЯ - просто текст!
             cursor = conn.execute(
                 'INSERT INTO users (username, email, password, role, bio) VALUES (?, ?, ?, ?, ?)',
                 (username, email, password, role, bio)
@@ -56,8 +48,7 @@ def create_test_data():
             if existing:
                 user_ids.append(existing['id'])
             print(f"  → {username} уже существует")
-    
-    # ==================== КАНАЛЫ (8 штук) ====================
+
     channels_data = [
         ('Технологии', 'Новости IT, гаджеты, программирование 🖥️', user_ids[2]),
         ('Игры', 'Обзоры игр, стримы, киберспорт 🎮', user_ids[6]),
@@ -68,7 +59,7 @@ def create_test_data():
         ('Книги', 'Обсуждаем литературу 📚', user_ids[16]),
         ('Авто', 'Всё об автомобилях 🚗', user_ids[19]),
     ]
-    
+
     channel_ids = []
     for name, description, creator_id in channels_data:
         try:
@@ -83,115 +74,105 @@ def create_test_data():
             if existing:
                 channel_ids.append(existing['id'])
             print(f"  → Канал {name} уже существует")
-    
-    # ==================== ПОСТЫ ====================
+
     posts_data = [
-        # Технологии
-        (user_ids[2], channel_ids[0], 'text', 
-         'Python vs JavaScript в 2024', 
+        (user_ids[2], channel_ids[0], 'text',
+         'Python vs JavaScript в 2024',
          'Сравниваем два популярных языка. Какой выбрать новичку? По моему опыту, Python лучше для начала - синтаксис проще и понятнее. #python #javascript #programming'),
-        
+
         (user_ids[11], channel_ids[0], 'text',
          'Топ-5 расширений для VS Code',
          'Делюсь своим списком must-have расширений: Prettier, ESLint, GitLens, Live Server, Auto Rename Tag. А какие используете вы? #vscode #coding'),
-        
+
         (user_ids[17], channel_ids[0], 'text',
          'Обзор нового MacBook Air M3',
          'Пользуюсь уже месяц. Батарея держит весь день, производительность отличная. Единственный минус - цена 😅 #apple #macbook'),
-        
-        # Игры
+
         (user_ids[6], channel_ids[1], 'text',
          'GTA 6 - первые впечатления',
          'Прошёл уже 20 часов. Графика нереальная, сюжет затягивает! Rockstar снова сделали шедевр 🎮 #gta6 #gaming'),
-        
+
         (user_ids[13], channel_ids[1], 'text',
          'Сборка игрового ПК за 80к',
          'Собрал бюджетный игровой комп. RTX 4060, Ryzen 5 7600, 16GB RAM. Тянет всё на высоких! #pcbuild #gaming'),
-        
+
         (user_ids[6], channel_ids[1], 'text',
          'Лучшие инди-игры 2024',
          'Моя подборка недооценённых инди: Hades 2, Balatro, Animal Well. Все - маст хэв! #indie #gaming'),
-        
-        # Творчество
+
         (user_ids[8], channel_ids[2], 'text',
          'Как я рисовал закат',
          'Работал над этим артом неделю. Использовал Procreate на iPad. Что думаете? #art #digital'),
-        
+
         (user_ids[5], channel_ids[2], 'text',
          'Туториал: основы композиции',
          'Разбираем правило третей, золотое сечение и другие приёмы. Полезно для фото и дизайна! #tutorial #design'),
-        
+
         (user_ids[14], channel_ids[2], 'text',
          'Тренды в UI/UX 2024',
          'Минимализм, тёмные темы, микроанимации. Что ещё актуально в этом году? #uidesign #trends'),
-        
-        # Кулинария
+
         (user_ids[7], channel_ids[3], 'text',
          'Рецепт пасты карбонара',
          'Настоящая итальянская карбонара БЕЗ сливок! Секрет в правильном соусе из желтков и пекорино 🍝 #food #recipe'),
-        
+
         (user_ids[7], channel_ids[3], 'text',
          'Завтрак за 10 минут',
          '3 быстрых рецепта для тех, кто спешит: овсянка с ягодами, тосты с авокадо, омлет с овощами ☕ #breakfast'),
-        
-        # Путешествия
+
         (user_ids[3], channel_ids[4], 'text',
          'Неделя в Италии',
          'Вернулась из Рима и Флоренции! Делюсь впечатлениями и лайфхаками. Обязательно попробуйте джелато! 🇮🇹 #travel #italy'),
-        
+
         (user_ids[15], channel_ids[4], 'text',
          'Бюджетно по Азии',
          'Как я месяц путешествовал по Таиланду за 50к рублей. Спойлер: уличная еда - это спасение! #budget #travel'),
-        
-        # Спорт
+
         (user_ids[9], channel_ids[5], 'text',
          'Программа тренировок для новичков',
          'Составил базовую программу на 3 дня в неделю. Все упражнения с собственным весом 💪 #fitness #workout'),
-        
+
         (user_ids[18], channel_ids[5], 'text',
          'Йога для начинающих',
          '5 простых асан, которые можно делать дома. Улучшают гибкость и снимают стресс 🧘 #yoga'),
-        
-        # Книги
+
         (user_ids[16], channel_ids[6], 'text',
          'Топ-5 книг по саморазвитию',
          'Мой список: Атомные привычки, Думай медленно решай быстро, 7 навыков, Поток, Антихрупкость 📚 #books'),
-        
+
         (user_ids[16], channel_ids[6], 'text',
          'Обзор "Мастер и Маргарита"',
          'Перечитала спустя 10 лет. Совершенно другое восприятие! Какая ваша любимая цитата? #bulgakov'),
-        
-        # Авто
+
         (user_ids[19], channel_ids[7], 'text',
          'Тест-драйв Tesla Model 3',
          'Взял на тест электромобиль. Автопилот впечатляет, но инфраструктура пока слабая ⚡ #tesla #electric'),
-        
+
         (user_ids[19], channel_ids[7], 'text',
          'Как выбрать первую машину',
          'Советы новичкам: на что смотреть, какие марки надёжные, где лучше покупать 🚗 #firstcar'),
-        
-        # Посты без канала (общая лента)
+
         (user_ids[0], None, 'text',
          'Добро пожаловать!',
          'Приветствуем всех на нашей платформе! Читайте правила и общайтесь уважительно 👋'),
-        
+
         (user_ids[1], None, 'text',
          'Правила сообщества',
          'Напоминаю основные правила: без спама, оскорблений и нелегального контента. Вопросы - в ЛС ⚖️'),
-        
+
         (user_ids[4], None, 'text',
          'Ищу команду для проекта',
          'Запускаем стартап, нужен фронтендер и дизайнер. Пишите в ЛС! #job #startup'),
-        
+
         (user_ids[12], None, 'text',
          'Осенний фотосет',
          'Поймала золотую осень в парке. Обожаю это время года! 🍂 #photo #autumn'),
-        
+
         (user_ids[10], None, 'text',
          'Новый трек!',
          'Записал кавер на любимую песню. Скоро выложу, ждите! 🎵 #music'),
     ]
-    
+
     post_ids = []
     for user_id, channel_id, post_type, title, content in posts_data:
         try:
@@ -203,8 +184,7 @@ def create_test_data():
             print(f"  ✓ Пост: {title[:40]}...")
         except Exception as e:
             print(f"  ✗ Ошибка: {e}")
-    
-    # ==================== КОММЕНТАРИИ ====================
+
     comments_templates = [
         'Отличный пост! 👍',
         'Спасибо за информацию!',
@@ -235,7 +215,7 @@ def create_test_data():
         'Очень актуально',
         'Мне помогло, спасибо',
     ]
-    
+
     comment_count = 0
     for post_id in post_ids:
         num_comments = random.randint(3, 10)
@@ -251,11 +231,10 @@ def create_test_data():
             except:
                 pass
     print(f"  ✓ Комментариев: {comment_count}")
-    
-    # ==================== РЕАКЦИИ ====================
+
     reaction_types = ['like', 'love', 'laugh', 'wow', 'sad', 'dislike']
-    reaction_weights = [50, 25, 12, 8, 3, 2]  # like самый частый
-    
+    reaction_weights = [50, 25, 12, 8, 3, 2]
+
     reaction_count = 0
     for post_id in post_ids:
         num_reactions = random.randint(8, 18)
@@ -271,12 +250,15 @@ def create_test_data():
             except:
                 pass
     print(f"  ✓ Реакций: {reaction_count}")
-    
-    # ==================== ПОДПИСКИ НА КАНАЛЫ ====================
+
+    channels_creators = {channel_ids[i]: channels_data[i][2] for i in range(len(channel_ids))}
+
     sub_count = 0
     for channel_id in channel_ids:
+        creator_id = channels_creators[channel_id]
+        eligible_users = [uid for uid in user_ids if uid != creator_id]
         num_subs = random.randint(10, 18)
-        subscribers = random.sample(user_ids, min(num_subs, len(user_ids)))
+        subscribers = random.sample(eligible_users, min(num_subs, len(eligible_users)))
         for user_id in subscribers:
             try:
                 conn.execute(
@@ -287,8 +269,7 @@ def create_test_data():
             except:
                 pass
     print(f"  ✓ Подписок: {sub_count}")
-    
-    # ==================== ГЛОБАЛЬНЫЙ ЧАТ ====================
+
     chat_messages = [
         (user_ids[0], 'Добро пожаловать всем новичкам! 👋'),
         (user_ids[2], 'Привет! Кто тут есть?'),
@@ -325,7 +306,7 @@ def create_test_data():
         (user_ids[5], 'И вам!'),
         (user_ids[7], 'Спокойной ночи 😴'),
     ]
-    
+
     for user_id, content in chat_messages:
         try:
             conn.execute(
@@ -335,8 +316,7 @@ def create_test_data():
         except:
             pass
     print(f"  ✓ Сообщений в чате: {len(chat_messages)}")
-    
-    # ==================== ЛИЧНЫЕ СООБЩЕНИЯ ====================
+
     conversations = [
         (user_ids[2], user_ids[3], [
             ('Привет! Видел твой пост про Италию?', 0),
@@ -365,7 +345,7 @@ def create_test_data():
             ('Принял!', 1),
         ]),
     ]
-    
+
     conv_count = 0
     msg_count = 0
     for user1, user2, messages in conversations:
@@ -377,7 +357,7 @@ def create_test_data():
             )
             conv_id = cursor.lastrowid
             conv_count += 1
-            
+
             for content, sender_idx in messages:
                 sender = user1 if sender_idx == 0 else user2
                 conn.execute(
@@ -387,10 +367,9 @@ def create_test_data():
                 msg_count += 1
         except:
             pass
-    
+
     print(f"  ✓ Переписок: {conv_count}, сообщений: {msg_count}")
-    
-    # ==================== УВЕДОМЛЕНИЯ ====================
+
     notifications_data = [
         (user_ids[2], 'reaction', 'alice_wonder оценил ваш пост', '/#post-1'),
         (user_ids[2], 'comment', 'bob_builder прокомментировал ваш пост', '/#post-1'),
@@ -398,7 +377,7 @@ def create_test_data():
         (user_ids[6], 'reaction', 'ivan_game оценил ваш пост', '/#post-4'),
         (user_ids[7], 'comment', 'emma_star прокомментировал ваш пост', '/#post-10'),
     ]
-    
+
     for user_id, n_type, content, link in notifications_data:
         try:
             conn.execute(
@@ -408,15 +387,14 @@ def create_test_data():
         except:
             pass
     print(f"  ✓ Уведомлений: {len(notifications_data)}")
-    
+
     conn.commit()
     conn.close()
-    
-    # ==================== ИТОГИ ====================
-    print("\n" + "="*55)
+
+    print("\n" + "=" * 55)
     print("  ✅ ТЕСТОВЫЕ ДАННЫЕ УСПЕШНО СОЗДАНЫ!")
-    print("="*55)
-    
+    print("=" * 55)
+
     print("\n📊 СТАТИСТИКА:")
     print(f"   • Пользователей: {len(users_data)}")
     print(f"   • Каналов: {len(channels_data)}")
@@ -425,10 +403,10 @@ def create_test_data():
     print(f"   • Реакций: ~{reaction_count}")
     print(f"   • Подписок: ~{sub_count}")
     print(f"   • Сообщений в чате: {len(chat_messages)}")
-    
-    print("\n" + "="*55)
+
+    print("\n" + "=" * 55)
     print("  📋 АККАУНТЫ ДЛЯ ВХОДА")
-    print("="*55)
+    print("=" * 55)
     print("\n  👑 АДМИНИСТРАТОР:")
     print("     Логин: admin")
     print("     Пароль: admin")
@@ -442,7 +420,7 @@ def create_test_data():
     print("     peter_code, nina_photo, ivan_game,")
     print("     olga_design, denis_travel, maria_book,")
     print("     sergey_tech, elena_yoga, andrey_car")
-    print("="*55)
+    print("=" * 55)
 
 
 if __name__ == '__main__':
