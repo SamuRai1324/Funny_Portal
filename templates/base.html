@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Aura Nexus{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
 </head>
@@ -16,7 +19,9 @@
         <a href="/admin/users">👥 Пользователи</a>
         <a href="/admin/reports">
             📋 Жалобы
-            {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}
+            {% if pending_reports_count > 0 %}
+            <span class="badge">{{ pending_reports_count }}</span>
+            {% endif %}
         </a>
         <a href="/admin/bans">🚫 Баны</a>
         <a href="/admin/logs">📝 Логи</a>
@@ -26,7 +31,9 @@
         <span class="admin-bar-label">🛡️ МОДЕРАТОР</span>
         <a href="/admin/reports">
             📋 Жалобы
-            {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}
+            {% if pending_reports_count > 0 %}
+            <span class="badge">{{ pending_reports_count }}</span>
+            {% endif %}
         </a>
         <a href="/admin/bans">🚫 Баны</a>
     </div>
@@ -34,7 +41,9 @@
 
     <nav>
         <a href="/" class="logo">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image"
+            <img src="{{ url_for('static', filename='images/logo.png') }}"
+                 alt="Aura Nexus"
+                 class="logo-image"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="logo-fallback" style="display:none;">AN</div>
         </a>
@@ -48,6 +57,7 @@
                 </span>
                 <span>Главная</span>
             </a>
+
             <a href="/channels" class="nav-link {% if '/channel' in request.path %}active{% endif %}">
                 <span class="nav-icon">
                     <img src="{{ url_for('static', filename='images/icons/channels.png') }}" alt=""
@@ -56,6 +66,7 @@
                 </span>
                 <span>Каналы</span>
             </a>
+
             {% if current_user %}
             <a href="/messages" class="nav-link {% if '/messages' in request.path %}active{% endif %}">
                 <span class="nav-icon">
@@ -68,6 +79,7 @@
                 <span class="badge">{{ message_count }}</span>
                 {% endif %}
             </a>
+
             <a href="/notifications" class="nav-link {% if '/notifications' in request.path %}active{% endif %}">
                 <span class="nav-icon">
                     <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
@@ -82,13 +94,36 @@
             {% endif %}
         </div>
 
-        <div class="nav-center">
-            <form class="search-bar" action="/" method="GET">
-                <input type="text" name="q" placeholder="Поиск постов..." value="{{ request.args.get('q', '') }}">
-                <button type="submit">🔍</button>
-            </form>
-            <a href="/search/users" class="search-users-btn">👤 Поиск людей</a>
-        </div>
+<div class="nav-center">
+    <form class="search-bar" action="/" method="GET">
+        <input type="text"
+               name="q"
+               placeholder="Поиск..."
+               value="{{ request.args.get('q', '') }}">
+
+        <div class="search-divider"></div>
+
+        <button type="submit" class="search-btn-posts" title="Поиск постов">
+            <img src="{{ url_for('static', filename='images/icons/search.png') }}"
+                 alt=""
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+            <span class="emoji-fallback" style="display:none;">🔍</span>
+            <span>Посты</span>
+        </button>
+
+        <div class="search-divider"></div>
+
+        <a href="/search/users?q={{ request.args.get('q', '') }}"
+           class="search-btn-users"
+           title="Поиск людей">
+            <img src="{{ url_for('static', filename='images/icons/search_users.png') }}"
+                 alt=""
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+            <span class="emoji-fallback" style="display:none;">👤</span>
+            <span>Люди</span>
+        </a>
+    </form>
+</div>
 
         <div class="nav-right">
             {% if current_user %}
@@ -102,18 +137,33 @@
                         {% endif %}
                     </div>
                     <span>{{ current_user.username }}</span>
-                    <span>▼</span>
+                    <span class="nav-chevron">▼</span>
                 </div>
                 <div class="dropdown-menu">
                     <a href="/profile/{{ current_user.username }}">
-                        <span>👤</span> Мой профиль
+                        <span class="nav-icon">
+                            <img src="{{ url_for('static', filename='images/icons/profile.png') }}" alt=""
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <span class="emoji-fallback" style="display:none;">👤</span>
+                        </span>
+                        Мой профиль
                     </a>
                     <a href="/profile/settings">
-                        <span>⚙️</span> Настройки
+                        <span class="nav-icon">
+                            <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <span class="emoji-fallback" style="display:none;">⚙️</span>
+                        </span>
+                        Настройки
                     </a>
                     <div class="dropdown-divider"></div>
                     <a href="/logout" class="danger">
-                        <span>🚪</span> Выйти
+                        <span class="nav-icon">
+                            <img src="{{ url_for('static', filename='images/icons/logout.png') }}" alt=""
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <span class="emoji-fallback" style="display:none;">🚪</span>
+                        </span>
+                        Выйти
                     </a>
                 </div>
             </div>
@@ -153,7 +203,14 @@
             {% block sidebar %}
             <div class="card chat-box">
                 <div class="card-header">
-                    <h3 class="card-title">🌐 Глобальный чат</h3>
+                    <h3 class="card-title">
+                        <span class="nav-icon">
+                            <img src="{{ url_for('static', filename='images/icons/global_chat.png') }}" alt=""
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <span class="emoji-fallback" style="display:none;">🌐</span>
+                        </span>
+                        Глобальный чат
+                    </h3>
                 </div>
                 <div class="chat-messages" id="global-chat-messages">
                     {% for msg in chat_messages %}
@@ -178,8 +235,18 @@
                 </div>
                 <div id="chat-cooldown" style="display: none; padding: 0.5rem 1rem; text-align: center; color: var(--warning); font-size: 0.85rem;"></div>
                 <form class="chat-input" id="global-chat-form" action="/api/global_chat" method="POST">
-                    <input type="text" name="content" id="global-chat-input" placeholder="Написать..." autocomplete="off" required>
-                    <button type="submit">➤</button>
+                    <input type="text"
+                        name="content"
+                        id="global-chat-input"
+                        placeholder="Написать..."
+                        autocomplete="off"
+                        required>
+                    <button type="submit">
+                        <img src="{{ url_for('static', filename='images/icons/send.png') }}" alt=""
+                             style="width:20px;height:20px;object-fit:contain;filter:brightness(10);"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">➤</span>
+                    </button>
                 </form>
             </div>
             {% endblock %}

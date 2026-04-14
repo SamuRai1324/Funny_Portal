@@ -3,6 +3,7 @@
 
 {% block content %}
 {% if current_user %}
+
     {% if stories %}
     <div class="card stories-card">
         <div class="stories-container">
@@ -30,43 +31,53 @@
     </div>
     {% endif %}
 
+    {% set tab_create_map = {
+        'all':     {'url': None,              'label': None},
+        'text':    {'url': '/create/post',    'label': 'Пост'},
+        'video':   {'url': '/create/video',   'label': 'Видео'},
+        'photo':   {'url': '/create/photo',   'label': 'Фото'},
+        'audio':   {'url': '/create/audio',   'label': 'Аудио'},
+        'article': {'url': '/create/article', 'label': 'Статья'}
+    } %}
+
     <div class="tabs">
-        <a href="/?tab=all" class="tab {% if current_tab == 'all' and not search_query %}active{% endif %}">Все</a>
-        <a href="/?tab=text" class="tab {% if current_tab == 'text' %}active{% endif %}">
+        <a href="/?tab=all"
+           class="tab {% if current_tab == 'all' and not search_query %}active{% endif %}">
+            Все
+        </a>
+        <a href="/?tab=text"
+           class="tab {% if current_tab == 'text' %}active{% endif %}">
             📝 Посты
-            {% if current_tab == 'text' %}
-            <span class="tab-create-link"><a href="/create/post">+ Создать</a></span>
-            {% endif %}
         </a>
-        <a href="/?tab=video" class="tab {% if current_tab == 'video' %}active{% endif %}">
+        <a href="/?tab=video"
+           class="tab {% if current_tab == 'video' %}active{% endif %}">
             📹 Видео
-            {% if current_tab == 'video' %}
-            <span class="tab-create-link"><a href="/create/video">+ Создать</a></span>
-            {% endif %}
         </a>
-        <a href="/?tab=photo" class="tab {% if current_tab == 'photo' %}active{% endif %}">
+        <a href="/?tab=photo"
+           class="tab {% if current_tab == 'photo' %}active{% endif %}">
             🖼️ Фото
-            {% if current_tab == 'photo' %}
-            <span class="tab-create-link"><a href="/create/photo">+ Создать</a></span>
-            {% endif %}
         </a>
-        <a href="/?tab=audio" class="tab {% if current_tab == 'audio' %}active{% endif %}">
+        <a href="/?tab=audio"
+           class="tab {% if current_tab == 'audio' %}active{% endif %}">
             🎵 Аудио
-            {% if current_tab == 'audio' %}
-            <span class="tab-create-link"><a href="/create/audio">+ Создать</a></span>
-            {% endif %}
         </a>
-        <a href="/?tab=article" class="tab {% if current_tab == 'article' %}active{% endif %}">
+        <a href="/?tab=article"
+           class="tab {% if current_tab == 'article' %}active{% endif %}">
             📄 Статьи
-            {% if current_tab == 'article' %}
-            <span class="tab-create-link"><a href="/create/article">+ Создать</a></span>
-            {% endif %}
         </a>
 
+        {% set create_info = tab_create_map.get(current_tab, tab_create_map['all']) %}
+        {% if create_info.url %}
+        <a href="{{ create_info.url }}" class="create-btn">
+            <span>+</span>
+            <span>{{ create_info.label }}</span>
+        </a>
+        {% else %}
         <button class="create-btn" id="open-create-modal">
             <span>+</span>
             <span>Создать</span>
         </button>
+        {% endif %}
     </div>
 
     {% if search_query %}
@@ -87,6 +98,7 @@
     {% endfor %}
 
 {% else %}
+
     <div class="card welcome-card">
         <h1 class="welcome-title">Добро пожаловать в Aura Nexus</h1>
         <p class="welcome-text">
@@ -120,6 +132,7 @@
             <p>Чаты и комментарии</p>
         </div>
     </div>
+
 {% endif %}
 
 {% if current_user %}
@@ -197,25 +210,6 @@
     gap: 1rem;
 }
 
-.tab-create-link {
-    margin-left: 0.5rem;
-}
-
-.tab-create-link a {
-    background: var(--accent-gradient);
-    color: white;
-    padding: 0.15rem 0.6rem;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.tab-create-link a:hover {
-    opacity: 0.85;
-    color: white;
-}
-
 .welcome-card {
     text-align: center;
     padding: 4rem 2rem;
@@ -223,6 +217,7 @@
 
 .welcome-title {
     font-size: 2.5rem;
+    font-weight: 900;
     margin-bottom: 1rem;
     background: var(--accent-gradient);
     -webkit-background-clip: text;
@@ -253,22 +248,10 @@
     margin-top: 2rem;
 }
 
-.feature-card {
-    text-align: center;
-    padding: 2rem;
-}
-
-.feature-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
+.feature-card { text-align: center; padding: 2rem; }
+.feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
 .feature-card h3 { margin-bottom: 0.5rem; }
-
-.feature-card p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
+.feature-card p { color: var(--text-secondary); font-size: 0.9rem; }
 </style>
 
 {% endblock %}
