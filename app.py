@@ -1810,6 +1810,12 @@ def page_not_found(e):
 def internal_error(e):
     return render_template('errors/500.html'), 500
 
+@app.route('/about')
+def about():
+    user = get_current_user()
+    chat_messages = get_chat_messages() if user else []
+    return render_template('about.html', chat_messages=chat_messages)
+
 @app.route('/api/search/users')
 @login_required
 def api_search_users():
