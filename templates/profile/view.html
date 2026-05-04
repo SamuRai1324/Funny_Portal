@@ -67,17 +67,15 @@
     </div>
     <div class="stories-container" style="padding: 1rem;">
         {% for story in active_stories %}
-        <div class="story-bubble">
+        <a href="/story/{{ story.id }}" class="story-bubble">
             <div class="story-avatar">
                 <div class="story-avatar-inner">
                     {% if story.file_path %}
                     <img src="{{ url_for('uploaded_file', filename=story.file_path) }}" alt="">
-                    {% else %}
-                    📷
-                    {% endif %}
+                    {% else %}📷{% endif %}
                 </div>
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
 </div>

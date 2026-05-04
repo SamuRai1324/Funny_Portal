@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title or 'Пост' }} - Aura Nexus{% endblock %}
+{% block content %}
+<div class="post-view-page" data-post-id="{{ post.id }}">
+    <a href="/" class="back-link">← Назад</a>
+
+    <article class="post-card post-card-full" id="post-{{ post.id }}" data-type="{{ post.post_type }}">
+        <div class="post-header">
+            {% if post.channel_id and post.channel_name %}
+            <a href="/channel/{{ post.channel_id }}" class="post-avatar">
+                {% if post.channel_avatar %}<img src="{{ url_for('uploaded_file', filename=post.channel_avatar) }}" alt="">{% else %}📺{% endif %}
+            </a>
+            {% else %}
+            <a href="/profile/{{ post.username }}" class="post-avatar">
+                {% if post.avatar %}<img src="{{ url_for('uploaded_file', filename=post.avatar) }}" alt="">{% else %}{{ post.username[0]|upper }}{% endif %}
+            </a>
+            {% endif %}
+            <div class="post-meta">
+                <div class="post-author">
+                    {% if post.channel_id and post.channel_name %}
+                    <a href="/channel/{{ post.channel_id }}">{{ post.channel_name }}</a>
+                    <span class="post-author-sub">от <a href="/profile/{{ post.username }}">{{ post.username }}</a></span>
+                    {% else %}
+                    <a href="/profile/{{ post.username }}">{{ post.username }}</a>
+                    {% endif %}
+                    <span class="post-badge {{ post.post_type }}">
+                        {% if post.post_type == 'text' %}Пост{% elif post.post_type == 'video' %}Видео{% elif post.post_type == 'photo' %}Фото{% elif post.post_type == 'audio' %}Аудио{% elif post.post_type == 'article' %}Статья{% else %}{{ post.post_type }}{% endif %}
+                    </span>
+                </div>
+                <div class="post-time"><span data-utc="{{ post.created_at }}">{{ post.created_at[:16] }}</span></div>
+            </div>
+            <div class="dropdown post-options">
+                <button class="post-options-btn">⋮</button>
+                <div class="dropdown-menu">
+                    {% if current_user and (current_user.id == post.user_id or current_user.role in ['admin', 'moderator']) %}
+                    <form action="/admin/posts/{{ post.id }}/delete" method="POST" style="margin:0;">
+                        <button type="submit" class="danger" onclick="return confirm('Удалить?')">🗑️ Удалить</button>
+                    </form>
+                    {% endif %}
+                    {% if current_user %}
+                    <button data-modal="report-modal-{{ post.id }}">⚠️ Жалоба</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="post-content">
+            {% if post.title %}<h1 class="post-title-full">{{ post.title }}</h1>{% endif %}
+            {% if post.post_type == 'article' %}
+            <div class="post-text post-text-full">{{ post.content|safe }}</div>
+            {% elif post.content %}
+            <div class="post-text post-text-full"><p>{{ post.content }}</p></div>
+            {% endif %}
+        </div>
+
+        {% if post.files and post.files|length > 0 %}
+            {% set photos = [] %}
+            {% set videos = [] %}
+            {% for f in post.files %}
+                {% if f.file_type == 'video' %}{% set _ = videos.append(f) %}{% else %}{% set _ = photos.append(f) %}{% endif %}
+            {% endfor %}
+            {% if photos|length > 0 %}
+            <div class="post-media">
+                {% if photos|length == 1 %}
+                <div class="slideshow-single"><img src="{{ url_for('uploaded_file', filename=photos[0].file_path) }}" alt=""></div>
+                {% else %}
+                <div class="slideshow">
+                    <div class="slideshow-track">
+                        {% for f in photos %}<div class="slideshow-slide"><img src="{{ url_for('uploaded_file', filename=f.file_path) }}" alt=""></div>{% endfor %}
+                    </div>
+                    <button class="slideshow-prev" type="button">‹</button>
+                    <button class="slideshow-next" type="button">›</button>
+                    <div class="slideshow-dots">
+                        {% for f in photos %}<span class="slideshow-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></span>{% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% for f in videos %}
+            <div class="post-media"><video src="{{ url_for('uploaded_file', filename=f.file_path) }}" controls></video></div>
+            {% endfor %}
+        {% elif post.post_type == 'video' and post.file_path %}
+        <div class="post-media"><video src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls></video></div>
+        {% elif post.post_type == 'photo' and post.file_path %}
+        <div class="post-media slideshow-single"><img src="{{ url_for('uploaded_file', filename=post.file_path) }}" alt=""></div>
+        {% endif %}
+
+        {% if post.post_type == 'audio' and post.file_path %}
+        <div class="audio-player"><audio src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls></audio></div>
+        {% endif %}
+
+        {% if post.view_count is defined %}
+        <div class="post-views">👁 {{ post.view_count or 0 }} просмотров</div>
+        {% endif %}
+
+        <div class="post-reactions" data-post-reactions="{{ post.id }}">
+            {% set rmap = {'like': '👍', 'dislike': '👎', 'love': '❤️', 'laugh': '😂', 'wow': '😮', 'sad': '😢'} %}
+            {% for rt in REACTION_TYPES %}
+            <button class="reaction-btn {% if post.user_reaction == rt %}active{% endif %}" data-post-id="{{ post.id }}" data-reaction="{{ rt }}">
+                <span class="emoji">{{ rmap[rt] }}</span>
+                <span class="reaction-count">{% if post.reactions and post.reactions.get(rt) %}{{ post.reactions[rt] }}{% endif %}</span>
+            </button>
+            {% endfor %}
+        </div>
+    </article>
+
+    <div class="post-comments-full">
+        <h2 class="section-title">💬 Комментарии</h2>
+        {% if current_user %}
+        <div class="comment-form-wrap">
+            <div class="comment-avatar-small">
+                {% if current_user.avatar %}<img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
+                {% else %}{{ current_user.username[0]|upper }}{% endif %}
+            </div>
+            <form class="comment-form" data-post-id="{{ post.id }}">
+                <input type="text" name="content" placeholder="Комментарий..." class="form-control">
+                <button type="submit" class="btn btn-sm">➤</button>
+            </form>
+        </div>
+        {% endif %}
+        <div class="comments-list" id="comments-list-{{ post.id }}"></div>
+    </div>
+</div>
+
+{% if current_user %}
+<div class="modal-overlay" id="report-modal-{{ post.id }}">
+    <div class="modal">
+        <div class="modal-header"><h3 class="modal-title">⚠️ Жалоба</h3><button class="modal-close">&times;</button></div>
+        <form action="/api/report" method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="post_id" value="{{ post.id }}">
+                <div class="form-group"><label class="form-label">Причина</label><select name="category" class="form-control" required>{% for v, l in REPORT_CATEGORIES %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label class="form-label">Описание</label><textarea name="description" class="form-control" placeholder="..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary modal-close">Отмена</button><button type="submit" class="btn btn-danger">Отправить</button></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.post-view-page { max-width: 800px; margin: 0 auto; }
+.back-link { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; display: inline-block; margin-bottom: 1rem; }
+.back-link:hover { color: var(--accent-green); }
+.post-card-full { margin-bottom: 1.5rem; }
+.post-card-full:hover { border-color: var(--border-color); box-shadow: none; }
+.post-title-full { font-size: 1.5rem; font-weight: 900; margin-bottom: 0.75rem; }
+.post-text-full { max-height: none !important; display: block !important; }
+.post-text-full::after { display: none !important; }
+.post-comments-full { margin-bottom: 2rem; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var page = document.querySelector('.post-view-page');
+    if (page) {
+        var postId = page.getAttribute('data-post-id');
+        if (postId) loadComments(parseInt(postId));
+    }
+});
+</script>
+{% endblock %}

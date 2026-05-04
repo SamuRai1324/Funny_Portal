@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Аналитика - Админ-панель{% endblock %}
+
+{% block content %}
+<h1 class="page-title">📈 Аналитика</h1>
+
+<div class="analytics-grid">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">🔥 Популярные посты</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Автор</th>
+                        <th>Заголовок</th>
+                        <th>👁 Просмотры</th>
+                        <th>👍 Реакции</th>
+                        <th>💬 Комменты</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in top_posts %}
+                    <tr>
+                        <td>
+                            <a href="/profile/{{ post.username }}">{{ post.username }}</a>
+                        </td>
+                        <td>
+                            <a href="/post/{{ post.id }}">{{ post.title or post.content[:40] or 'Без названия' }}</a>
+                        </td>
+                        <td>{{ post.view_count or 0 }}</td>
+                        <td>{{ post.reaction_count or 0 }}</td>
+                        <td>{{ post.comment_count or 0 }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted);">Нет данных</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">👤 Топ авторов</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Постов</th>
+                        <th>Просмотров</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in top_users %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; overflow: hidden; border: 2px solid var(--border-color);">
+                                    {% if user.avatar %}
+                                    <img src="{{ url_for('uploaded_file', filename=user.avatar) }}" style="width:100%;height:100%;object-fit:cover;">
+                                    {% else %}
+                                    {{ user.username[0]|upper }}
+                                    {% endif %}
+                                </div>
+                                <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                            </div>
+                        </td>
+                        <td>{{ user.post_count }}</td>
+                        <td>{{ user.total_views }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted);">Нет данных</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .analytics-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="{{ current_theme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,121 +9,78 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% if current_theme == 'light' %}
+    <style>
+        :root {
+            --bg-primary: #f4f6f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #eaedf0;
+            --border-color: #d0d5dd;
+            --text-primary: #0d1117;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+        }
+    </style>
+    {% elif current_theme == 'custom' and theme_vars %}
+    <style>
+        :root {
+            --bg-primary: {{ theme_vars.custom_bg }};
+            --bg-secondary: {{ theme_vars.custom_secondary }};
+            --bg-tertiary: {{ theme_vars.custom_secondary }}cc;
+            --text-primary: {{ theme_vars.custom_text }};
+            --accent-purple: {{ theme_vars.custom_accent }};
+        }
+    </style>
+    {% endif %}
     {% block head %}{% endblock %}
 </head>
-<body>
+<body{% if current_user %} data-current-user-id="{{ current_user.id }}"{% endif %}>
+
     {% if current_user and current_user.role == 'admin' %}
     <div class="admin-bar">
         <span class="admin-bar-label">⚙️ АДМИН</span>
         <a href="/admin">📊 Статистика</a>
         <a href="/admin/users">👥 Пользователи</a>
-        <a href="/admin/reports">
-            📋 Жалобы
-            {% if pending_reports_count > 0 %}
-            <span class="badge">{{ pending_reports_count }}</span>
-            {% endif %}
-        </a>
+        <a href="/admin/reports">📋 Жалобы {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}</a>
+        <a href="/admin/analytics">📈 Аналитика</a>
         <a href="/admin/bans">🚫 Баны</a>
         <a href="/admin/logs">📝 Логи</a>
     </div>
     {% elif current_user and current_user.role == 'moderator' %}
     <div class="admin-bar">
         <span class="admin-bar-label">🛡️ МОДЕРАТОР</span>
-        <a href="/admin/reports">
-            📋 Жалобы
-            {% if pending_reports_count > 0 %}
-            <span class="badge">{{ pending_reports_count }}</span>
-            {% endif %}
-        </a>
+        <a href="/admin/reports">📋 Жалобы {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}</a>
+        <a href="/admin/analytics">📈 Аналитика</a>
         <a href="/admin/bans">🚫 Баны</a>
     </div>
     {% endif %}
 
     <nav>
         <a href="/" class="logo">
-            <img src="{{ url_for('static', filename='images/logo.png') }}"
-                 alt="Aura Nexus"
-                 class="logo-image"
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="logo-fallback" style="display:none;">AN</div>
         </a>
 
-        <div class="nav-left">
-            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
-                <span class="nav-icon">
-                    <img src="{{ url_for('static', filename='images/icons/home.png') }}" alt=""
+        <div class="nav-center">
+            <form class="search-bar" action="/" method="GET">
+                <input type="text" name="q" placeholder="Поиск..." value="{{ request.args.get('q', '') }}">
+                <div class="search-divider"></div>
+                <button type="submit" class="search-btn-posts" title="Посты">
+                    <img src="{{ url_for('static', filename='images/icons/search.png') }}" alt=""
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">🏠</span>
-                </span>
-                <span>Главная</span>
-            </a>
-
-            <a href="/channels" class="nav-link {% if '/channel' in request.path %}active{% endif %}">
-                <span class="nav-icon">
-                    <img src="{{ url_for('static', filename='images/icons/channels.png') }}" alt=""
+                    <span class="emoji-fallback" style="display:none;">🔍</span>
+                    <span>Посты</span>
+                </button>
+                <div class="search-divider"></div>
+                <a href="/search/users?q={{ request.args.get('q', '') }}" class="search-btn-users" title="Люди">
+                    <img src="{{ url_for('static', filename='images/icons/search_users.png') }}" alt=""
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">📺</span>
-                </span>
-                <span>Каналы</span>
-            </a>
-
-            {% if current_user %}
-            <a href="/messages" class="nav-link {% if '/messages' in request.path %}active{% endif %}">
-                <span class="nav-icon">
-                    <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">💬</span>
-                </span>
-                <span>Сообщения</span>
-                {% if message_count > 0 %}
-                <span class="badge">{{ message_count }}</span>
-                {% endif %}
-            </a>
-
-            <a href="/notifications" class="nav-link {% if '/notifications' in request.path %}active{% endif %}">
-                <span class="nav-icon">
-                    <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">🔔</span>
-                </span>
-                <span>Уведомления</span>
-                {% if notification_count > 0 %}
-                <span class="badge notification-badge">{{ notification_count }}</span>
-                {% endif %}
-            </a>
-            {% endif %}
+                    <span class="emoji-fallback" style="display:none;">👤</span>
+                    <span>Люди</span>
+                </a>
+            </form>
         </div>
-
-<div class="nav-center">
-    <form class="search-bar" action="/" method="GET">
-        <input type="text"
-               name="q"
-               placeholder="Поиск..."
-               value="{{ request.args.get('q', '') }}">
-
-        <div class="search-divider"></div>
-
-        <button type="submit" class="search-btn-posts" title="Поиск постов">
-            <img src="{{ url_for('static', filename='images/icons/search.png') }}"
-                 alt=""
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-            <span class="emoji-fallback" style="display:none;">🔍</span>
-            <span>Посты</span>
-        </button>
-
-        <div class="search-divider"></div>
-
-        <a href="/search/users?q={{ request.args.get('q', '') }}"
-           class="search-btn-users"
-           title="Поиск людей">
-            <img src="{{ url_for('static', filename='images/icons/search_users.png') }}"
-                 alt=""
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-            <span class="emoji-fallback" style="display:none;">👤</span>
-            <span>Люди</span>
-        </a>
-    </form>
-</div>
 
         <div class="nav-right">
             {% if current_user %}
@@ -132,137 +89,129 @@
                     <div class="nav-user-avatar">
                         {% if current_user.avatar %}
                         <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
-                        {% else %}
-                        {{ current_user.username[0]|upper }}
-                        {% endif %}
+                        {% else %}{{ current_user.username[0]|upper }}{% endif %}
                     </div>
                     <span>{{ current_user.username }}</span>
                     <span class="nav-chevron">▼</span>
                 </div>
                 <div class="dropdown-menu">
-                    <a href="/profile/{{ current_user.username }}">
-                        <span class="nav-icon">
-                            <img src="{{ url_for('static', filename='images/icons/profile.png') }}" alt=""
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                            <span class="emoji-fallback" style="display:none;">👤</span>
-                        </span>
-                        Мой профиль
-                    </a>
-                    <a href="/profile/settings">
-                        <span class="nav-icon">
-                            <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                            <span class="emoji-fallback" style="display:none;">⚙️</span>
-                        </span>
-                        Настройки
-                    </a>
+                    <a href="/profile/{{ current_user.username }}">👤 Профиль</a>
+                    <a href="/profile/settings">⚙️ Настройки</a>
                     <div class="dropdown-divider"></div>
-                    <a href="/logout" class="danger">
-                        <span class="nav-icon">
-                            <img src="{{ url_for('static', filename='images/icons/logout.png') }}" alt=""
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                            <span class="emoji-fallback" style="display:none;">🚪</span>
-                        </span>
-                        Выйти
-                    </a>
+                    <a href="/logout" class="danger">🚪 Выйти</a>
                 </div>
             </div>
             {% else %}
             <div class="nav-auth">
-                <a href="/login" class="nav-link">
-                    <span>🔑</span>
-                    <span>Вход</span>
-                </a>
+                <a href="/login" class="nav-link">🔑 Вход</a>
                 <a href="/register" class="btn btn-sm">Регистрация</a>
             </div>
             {% endif %}
         </div>
     </nav>
 
-    <div class="layout {% block layout_class %}{% endblock %}">
-        <main class="main-content">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {% if category == 'success' %}✅
-                        {% elif category == 'danger' %}❌
-                        {% elif category == 'warning' %}⚠️
-                        {% else %}ℹ️{% endif %}
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            {% block content %}{% endblock %}
-        </main>
-
-        {% if current_user and not hide_sidebar %}
-        <aside class="sidebar">
-            {% block sidebar %}
-            <div class="card chat-box">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <span class="nav-icon">
-                            <img src="{{ url_for('static', filename='images/icons/global_chat.png') }}" alt=""
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                            <span class="emoji-fallback" style="display:none;">🌐</span>
-                        </span>
-                        Глобальный чат
-                    </h3>
-                </div>
-                <div class="chat-messages" id="global-chat-messages">
-                    {% for msg in chat_messages %}
-                    <div class="chat-message" data-message-id="{{ msg.id }}">
-                        <div class="chat-message-avatar">
-                            {% if msg.avatar %}
-                            <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
-                            {% else %}
-                            {{ msg.username[0]|upper }}
-                            {% endif %}
-                        </div>
-                        <div class="chat-message-content">
-                            <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
-                            <div class="chat-message-text">{{ msg.content }}</div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-state" style="padding: 2rem;">
-                        <p>Сообщений пока нет</p>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div id="chat-cooldown" style="display: none; padding: 0.5rem 1rem; text-align: center; color: var(--warning); font-size: 0.85rem;"></div>
-                <form class="chat-input" id="global-chat-form" action="/api/global_chat" method="POST">
-                    <input type="text"
-                        name="content"
-                        id="global-chat-input"
-                        placeholder="Написать..."
-                        autocomplete="off"
-                        required>
-                    <button type="submit">
-                        <img src="{{ url_for('static', filename='images/icons/send.png') }}" alt=""
-                             style="width:20px;height:20px;object-fit:contain;filter:brightness(10);"
+    <div class="page-wrapper">
+        <aside class="left-sidebar">
+            <nav class="side-nav">
+                <a href="/" class="side-link {% if request.path == '/' %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/home.png') }}" alt=""
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">➤</span>
-                    </button>
-                </form>
+                        <span class="emoji-fallback" style="display:none;">🏠</span>
+                    </span>
+                    <span class="side-label">Главная</span>
+                </a>
+                <a href="/channels" class="side-link {% if '/channel' in request.path %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/channels.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">📺</span>
+                    </span>
+                    <span class="side-label">Каналы</span>
+                </a>
+                {% if current_user %}
+                <div class="side-divider"></div>
+                <a href="/messages" class="side-link {% if '/messages' in request.path %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">💬</span>
+                    </span>
+                    <span class="side-label">Сообщения</span>
+                    {% if message_count > 0 %}<span class="badge">{{ message_count }}</span>{% endif %}
+                </a>
+                <a href="/notifications" class="side-link {% if '/notifications' in request.path %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">🔔</span>
+                    </span>
+                    <span class="side-label">Уведомления</span>
+                    {% if notification_count > 0 %}<span class="badge notification-badge">{{ notification_count }}</span>{% endif %}
+                </a>
+                {% endif %}
+            </nav>
+            <div class="side-footer-links">
+                <a href="/about">О нас</a>
+                <a href="/user_agreement">Правила</a>
             </div>
-            {% endblock %}
         </aside>
-        {% endif %}
+
+        <div class="layout {% block layout_class %}{% endblock %}">
+            <main class="main-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </main>
+
+            {% if current_user and not hide_sidebar %}
+            <aside class="sidebar">
+                {% block sidebar %}
+                <div class="card chat-box">
+                    <div class="card-header">
+                        <h3 class="card-title">🌐 Глобальный чат</h3>
+                    </div>
+                    <div class="chat-messages" id="global-chat-messages">
+                        {% for msg in chat_messages %}
+                        <div class="chat-message" data-message-id="{{ msg.id }}">
+                            <div class="chat-message-avatar">
+                                {% if msg.avatar %}<img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
+                                {% else %}{{ msg.username[0]|upper }}{% endif %}
+                            </div>
+                            <div class="chat-message-content">
+                                <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
+                                <div class="chat-message-text">{{ msg.content }}</div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-state" style="padding: 2rem;"><p>Сообщений нет</p></div>
+                        {% endfor %}
+                    </div>
+                    <div id="chat-cooldown" style="display:none;padding:0.5rem 1rem;text-align:center;color:var(--warning);font-size:0.82rem;"></div>
+                    <form class="chat-input" id="global-chat-form" action="/api/global_chat" method="POST">
+                        <input type="text" name="content" id="global-chat-input" placeholder="Написать..." autocomplete="off" required>
+                        <button type="submit">➤</button>
+                    </form>
+                </div>
+                {% endblock %}
+            </aside>
+            {% endif %}
+        </div>
     </div>
 
-
-<footer>
-    <div class="footer-links">
-        <a href="/about">О нас</a>
-        <span class="footer-dot">·</span>
-        <a href="/user_agreement">Пользовательское соглашение</a>
-    </div>
-    <p>&copy; 2026 Aura Nexus. Все права защищены.</p>
-</footer>
+    <footer>
+        <div class="footer-links">
+            <a href="/about">О нас</a>
+            <span class="footer-dot">·</span>
+            <a href="/user_agreement">Пользовательское соглашение</a>
+        </div>
+        <p>&copy; 2026 Aura Nexus. Все права защищены.</p>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/reactions.js') }}"></script>

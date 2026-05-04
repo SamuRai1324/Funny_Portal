@@ -3,14 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initComments() {
-    document.querySelectorAll('.toggle-comments').forEach(btn => {
+    document.querySelectorAll('.toggle-comments').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const postId = this.dataset.postId;
-            const commentsSection = document.getElementById(`comments-${postId}`);
-
-            if (commentsSection) {
-                commentsSection.classList.toggle('hidden');
-                if (!commentsSection.classList.contains('hidden') && !commentsSection.dataset.loaded) {
+            var postId = this.dataset.postId;
+            var section = document.getElementById('comments-' + postId);
+            if (section) {
+                section.classList.toggle('hidden');
+                if (!section.classList.contains('hidden') && !section.dataset.loaded) {
                     loadComments(postId);
                 }
             }
@@ -18,73 +17,76 @@ function initComments() {
     });
 
     document.addEventListener('submit', function(e) {
-        const form = e.target;
+        var form = e.target;
         if (form.classList.contains('comment-form')) {
             e.preventDefault();
-            const postId = form.dataset.postId;
-            const parentId = form.dataset.parentId || null;
-            const input = form.querySelector('input[name="content"]');
-            const content = input.value.trim();
+            var postId = form.dataset.postId;
+            var parentId = form.dataset.parentId || null;
+            var input = form.querySelector('input[name="content"]');
+            var content = input.value.trim();
             if (!content) return;
-
             submitComment(postId, content, parentId, function() {
                 input.value = '';
                 loadComments(postId);
-                const countEl = document.querySelector(`.comment-count-${postId}`);
-                if (countEl) {
-                    countEl.textContent = parseInt(countEl.textContent || 0) + 1;
-                }
+                var countEl = document.querySelector('.comment-count-' + postId);
+                if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
             });
         }
     });
 
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('reply-btn')) {
-            const commentId = e.target.dataset.commentId;
-            const postId = e.target.dataset.postId;
-            toggleReplyForm(commentId, postId);
+            toggleReplyForm(e.target.dataset.commentId, e.target.dataset.postId);
         }
-
-        const vlineArea = e.target.closest('.comment-vline-area');
+        if (e.target.classList.contains('edit-comment-btn')) {
+            startEditComment(e.target.dataset.commentId);
+        }
+        if (e.target.classList.contains('save-edit-btn')) {
+            saveEditComment(e.target.dataset.commentId);
+        }
+        if (e.target.classList.contains('cancel-edit-btn')) {
+            cancelEditComment(e.target.dataset.commentId);
+        }
+        var vlineArea = e.target.closest('.comment-vline-area');
         if (vlineArea) {
-            const node = vlineArea.closest('.comment-node');
+            var node = vlineArea.closest('.comment-node');
             if (node) collapseComment(node);
         }
-
         if (e.target.classList.contains('expand-replies-btn')) {
-            const node = e.target.closest('.comment-node');
+            var node = e.target.closest('.comment-node');
             if (node) expandComment(node);
         }
     });
+
+    var page = document.querySelector('.post-view-page');
+    if (page) {
+        var postId = page.getAttribute('data-post-id');
+        if (postId) loadComments(parseInt(postId));
+    }
 }
 
 function collapseComment(node) {
-    const replies = node.querySelector('.comment-replies');
-    const vline = node.querySelector('.comment-vline');
-    const vlineArea = node.querySelector('.comment-vline-area');
+    var replies = node.querySelector('.comment-replies');
+    var vline = node.querySelector('.comment-vline');
+    var vlineArea = node.querySelector('.comment-vline-area');
     if (!replies) return;
-
-    const count = node.querySelectorAll('.comment-node').length;
-
+    var count = node.querySelectorAll('.comment-node').length;
     replies.style.display = 'none';
     if (vline) vline.style.display = 'none';
     if (vlineArea) vlineArea.style.pointerEvents = 'none';
-
-    const existing = node.querySelector('.expand-replies-btn');
-    if (!existing) {
-        const btn = document.createElement('button');
+    if (!node.querySelector('.expand-replies-btn')) {
+        var btn = document.createElement('button');
         btn.className = 'expand-replies-btn';
-        btn.textContent = `${count} ${pluralReplies(count)}`;
+        btn.textContent = count + ' ' + pluralReplies(count);
         node.querySelector('.comment-content-wrap').appendChild(btn);
     }
 }
 
 function expandComment(node) {
-    const replies = node.querySelector('.comment-replies');
-    const vline = node.querySelector('.comment-vline');
-    const vlineArea = node.querySelector('.comment-vline-area');
-    const btn = node.querySelector('.expand-replies-btn');
-
+    var replies = node.querySelector('.comment-replies');
+    var vline = node.querySelector('.comment-vline');
+    var vlineArea = node.querySelector('.comment-vline-area');
+    var btn = node.querySelector('.expand-replies-btn');
     if (replies) replies.style.display = '';
     if (vline) vline.style.display = '';
     if (vlineArea) vlineArea.style.pointerEvents = '';
@@ -93,142 +95,137 @@ function expandComment(node) {
 
 function pluralReplies(n) {
     if (n % 10 === 1 && n % 100 !== 11) return 'ответ';
-    if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return 'ответа';
+    if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return 'ответа';
     return 'ответов';
 }
 
 async function submitComment(postId, content, parentId, callback) {
-    const formData = new FormData();
+    var formData = new FormData();
     formData.append('content', content);
     if (parentId) formData.append('parent_id', parentId);
-
     try {
-        const response = await fetch(`/api/comment/${postId}`, {
-            method: 'POST',
-            body: formData
-        });
-        if (response.ok) {
-            if (callback) callback();
-        } else if (response.status === 401) {
-            window.location.href = '/login';
-        }
-    } catch (error) {
-        console.error('Comment submit error:', error);
-    }
+        var response = await fetch('/api/comment/' + postId, { method: 'POST', body: formData });
+        if (response.ok) { if (callback) callback(); }
+        else if (response.status === 401) window.location.href = '/login';
+    } catch (err) { console.error(err); }
 }
 
 async function loadComments(postId) {
-    const container = document.getElementById(`comments-${postId}`);
-    if (!container) return;
-
     try {
-        const response = await fetch(`/api/comments/${postId}`);
+        var response = await fetch('/api/comments/' + postId);
         if (response.ok) {
-            const comments = await response.json();
-            const listEl = document.getElementById(`comments-list-${postId}`);
+            var comments = await response.json();
+            var listEl = document.getElementById('comments-list-' + postId);
             if (listEl) {
-                if (comments.length === 0) {
-                    listEl.innerHTML = '<p class="comments-empty">Комментариев пока нет</p>';
-                } else {
-                    listEl.innerHTML = comments.map(c => renderComment(c, postId, 0)).join('');
-                }
+                listEl.innerHTML = comments.length === 0
+                    ? '<p class="comments-empty">Комментариев пока нет</p>'
+                    : comments.map(function(c) { return renderComment(c, postId, 0); }).join('');
             }
-            container.dataset.loaded = 'true';
+            var section = document.getElementById('comments-' + postId);
+            if (section) section.dataset.loaded = 'true';
         }
-    } catch (error) {
-        console.error('Load comments error:', error);
-    }
+    } catch (err) { console.error(err); }
 }
 
 function renderComment(comment, postId, depth) {
-    const maxDepth = 6;
-    const currentDepth = Math.min(depth, maxDepth);
-    const hasReplies = comment.replies && comment.replies.length > 0;
-
-    const avatarContent = comment.avatar
-        ? `<img src="/uploads/${comment.avatar}" alt="">`
-        : `<span>${comment.username[0].toUpperCase()}</span>`;
-
-    const repliesHtml = hasReplies
-        ? `<div class="comment-replies">
-               ${comment.replies.map(r => renderComment(r, postId, depth + 1)).join('')}
-           </div>`
+    var hasReplies = comment.replies && comment.replies.length > 0;
+    var avatar = comment.avatar
+        ? '<img src="/uploads/' + comment.avatar + '" alt="">'
+        : '<span>' + comment.username[0].toUpperCase() + '</span>';
+    var replies = hasReplies
+        ? '<div class="comment-replies">' + comment.replies.map(function(r) { return renderComment(r, postId, depth + 1); }).join('') + '</div>'
         : '';
+    var body = document.body;
+    var uid = body.dataset.currentUserId || '';
+    var isOwner = String(comment.user_id) === uid;
+    var editBtn = isOwner ? '<button class="comment-action edit-comment-btn" data-comment-id="' + comment.id + '">✏️</button>' : '';
 
-    return `
-        <div class="comment-node" data-depth="${currentDepth}" data-comment-id="${comment.id}">
-            <div class="comment-gutter">
-                <div class="comment-avatar-small">${avatarContent}</div>
-                ${hasReplies
-                    ? `<div class="comment-vline-area" title="Свернуть">
-                           <div class="comment-vline"></div>
-                       </div>`
-                    : `<div class="comment-vline-empty"></div>`
-                }
-            </div>
-            <div class="comment-content-wrap">
-                <div class="comment-head">
-                    <a href="/profile/${comment.username}" class="comment-author">${comment.username}</a>
-                    <span class="comment-time">${formatTime(comment.created_at)}</span>
-                </div>
-                <div class="comment-text">${escapeHtml(comment.content)}</div>
-                <div class="comment-actions">
-                    <button class="comment-action reply-btn"
-                            data-comment-id="${comment.id}"
-                            data-post-id="${postId}">
-                        ↩ Ответить
-                    </button>
-                </div>
-                <div class="reply-form-container" id="reply-form-${comment.id}" style="display:none;"></div>
-                ${repliesHtml}
-            </div>
-        </div>
-    `;
+    return '<div class="comment-node" data-comment-id="' + comment.id + '">' +
+        '<div class="comment-gutter">' +
+            '<div class="comment-avatar-small">' + avatar + '</div>' +
+            (hasReplies ? '<div class="comment-vline-area"><div class="comment-vline"></div></div>' : '<div class="comment-vline-empty"></div>') +
+        '</div>' +
+        '<div class="comment-content-wrap">' +
+            '<div class="comment-head">' +
+                '<a href="/profile/' + comment.username + '" class="comment-author">' + comment.username + '</a>' +
+                '<span class="comment-time">' + formatTime(comment.created_at) + '</span>' +
+            '</div>' +
+            '<div class="comment-text" id="comment-text-' + comment.id + '">' + escapeHtml(comment.content) + '</div>' +
+            '<div class="comment-edit-area" id="comment-edit-' + comment.id + '" style="display:none;"></div>' +
+            '<div class="comment-actions">' +
+                '<button class="comment-action reply-btn" data-comment-id="' + comment.id + '" data-post-id="' + postId + '">↩ Ответить</button>' +
+                editBtn +
+            '</div>' +
+            '<div class="reply-form-container" id="reply-form-' + comment.id + '" style="display:none;"></div>' +
+            replies +
+        '</div></div>';
+}
+
+function startEditComment(commentId) {
+    var textEl = document.getElementById('comment-text-' + commentId);
+    var editEl = document.getElementById('comment-edit-' + commentId);
+    if (!textEl || !editEl) return;
+    textEl.style.display = 'none';
+    editEl.style.display = 'block';
+    editEl.innerHTML = '<input type="text" class="form-control edit-comment-input" value="' + escapeHtml(textEl.textContent.trim()) + '">' +
+        '<div style="display:flex;gap:0.4rem;margin-top:0.4rem;">' +
+        '<button class="btn btn-sm save-edit-btn" data-comment-id="' + commentId + '">Сохранить</button>' +
+        '<button class="btn btn-sm btn-secondary cancel-edit-btn" data-comment-id="' + commentId + '">Отмена</button></div>';
+    editEl.querySelector('.edit-comment-input').focus();
+}
+
+function cancelEditComment(commentId) {
+    var textEl = document.getElementById('comment-text-' + commentId);
+    var editEl = document.getElementById('comment-edit-' + commentId);
+    if (textEl) textEl.style.display = '';
+    if (editEl) { editEl.style.display = 'none'; editEl.innerHTML = ''; }
+}
+
+async function saveEditComment(commentId) {
+    var editEl = document.getElementById('comment-edit-' + commentId);
+    var content = editEl.querySelector('.edit-comment-input').value.trim();
+    if (!content) return;
+    try {
+        var response = await fetch('/api/comment/' + commentId + '/edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        });
+        if (response.ok) {
+            document.getElementById('comment-text-' + commentId).textContent = content;
+            cancelEditComment(commentId);
+        }
+    } catch (err) { console.error(err); }
 }
 
 function toggleReplyForm(commentId, postId) {
-    const container = document.getElementById(`reply-form-${commentId}`);
+    var container = document.getElementById('reply-form-' + commentId);
     if (!container) return;
-
     if (container.style.display === 'none') {
         container.style.display = 'block';
-        container.innerHTML = `
-            <form class="comment-form reply-form-inline"
-                  data-post-id="${postId}"
-                  data-parent-id="${commentId}">
-                <input type="text"
-                       name="content"
-                       placeholder="Ваш ответ..."
-                       class="form-control reply-input">
-                <div class="reply-form-actions">
-                    <button type="submit" class="btn btn-sm">Отправить</button>
-                    <button type="button" class="btn btn-sm btn-secondary reply-cancel">Отмена</button>
-                </div>
-            </form>
-        `;
-        container.querySelector('input[name="content"]').focus();
-        container.querySelector('.reply-cancel').addEventListener('click', function() {
-            container.style.display = 'none';
-        });
+        container.innerHTML = '<form class="comment-form reply-form-inline" data-post-id="' + postId + '" data-parent-id="' + commentId + '">' +
+            '<input type="text" name="content" placeholder="Ответ..." class="form-control reply-input">' +
+            '<div class="reply-form-actions"><button type="submit" class="btn btn-sm">➤</button>' +
+            '<button type="button" class="btn btn-sm btn-secondary reply-cancel">✕</button></div></form>';
+        container.querySelector('input').focus();
+        container.querySelector('.reply-cancel').addEventListener('click', function() { container.style.display = 'none'; });
     } else {
         container.style.display = 'none';
     }
 }
 
-function formatTime(dateString) {
-    const date = new Date(dateString.includes('Z') ? dateString : dateString + 'Z');
-    const now = new Date();
-    const diff = Math.floor((now - date) / 1000);
-
-    if (diff < 60) return 'только что';
-    if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} д назад`;
-    return date.toLocaleDateString('ru-RU');
+function formatTime(s) {
+    var d = new Date(s.indexOf('Z') > -1 ? s : s + 'Z');
+    var diff = Math.floor((new Date() - d) / 1000);
+    if (diff < 60) return 'сейчас';
+    if (diff < 3600) return Math.floor(diff / 60) + ' мин';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ч';
+    if (diff < 604800) return Math.floor(diff / 86400) + ' д';
+    return d.toLocaleDateString('ru-RU');
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function escapeHtml(t) {
+    var d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
 }

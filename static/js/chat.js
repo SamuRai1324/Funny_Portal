@@ -3,164 +3,83 @@ document.addEventListener('DOMContentLoaded', function() {
     initPrivateChat();
 });
 
-let chatCooldown = 0;
-let cooldownInterval = null;
+var chatCooldown = 0;
+var cooldownInterval = null;
 
 function initGlobalChat() {
-    const chatContainer = document.getElementById('global-chat-messages');
-    const chatForm = document.getElementById('global-chat-form');
-
-    if (!chatContainer || !chatForm) return;
-
-    scrollToBottom(chatContainer);
-
-    chatForm.addEventListener('submit', function(e) {
-        if (chatCooldown > 0) {
-            e.preventDefault();
-            showToast(`Подождите ${chatCooldown} секунд`, 'warning');
-            return;
-        }
+    var container = document.getElementById('global-chat-messages');
+    var form = document.getElementById('global-chat-form');
+    if (!container || !form) return;
+    scrollToBottom(container);
+    form.addEventListener('submit', function(e) {
+        if (chatCooldown > 0) { e.preventDefault(); showToast('Подождите ' + chatCooldown + ' сек', 'warning'); }
     });
-
     checkCooldownStatus();
-
-    setInterval(() => {
-        refreshChat();
-    }, 5000);
+    setInterval(refreshChat, 5000);
 }
 
-function scrollToBottom(container) {
-    if (container) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
+function scrollToBottom(c) { if (c) c.scrollTop = c.scrollHeight; }
 
 async function refreshChat() {
-    const chatContainer = document.getElementById('global-chat-messages');
-    if (!chatContainer) return;
-
+    var c = document.getElementById('global-chat-messages');
+    if (!c) return;
     try {
-        const response = await fetch('/api/global_chat/messages');
-        if (response.ok) {
-            const messages = await response.json();
-            const wasAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 50;
-
-            updateChatMessages(chatContainer, messages);
-
-            if (wasAtBottom) {
-                scrollToBottom(chatContainer);
-            }
+        var r = await fetch('/api/global_chat/messages');
+        if (r.ok) {
+            var msgs = await r.json();
+            var atBottom = c.scrollHeight - c.scrollTop <= c.clientHeight + 50;
+            var ids = new Set(Array.from(c.querySelectorAll('.chat-message')).map(function(m) { return m.dataset.messageId; }));
+            msgs.forEach(function(msg) {
+                if (!ids.has(String(msg.id))) {
+                    var d = document.createElement('div');
+                    d.className = 'chat-message';
+                    d.dataset.messageId = msg.id;
+                    var av = msg.avatar ? '<img src="/uploads/' + msg.avatar + '">' : '<span>' + msg.username[0].toUpperCase() + '</span>';
+                    d.innerHTML = '<div class="chat-message-avatar">' + av + '</div><div class="chat-message-content"><a href="/profile/' + msg.username + '" class="chat-message-author">' + msg.username + '</a><div class="chat-message-text">' + escapeHtmlChat(msg.content) + '</div></div>';
+                    c.appendChild(d);
+                }
+            });
+            if (atBottom) scrollToBottom(c);
         }
-    } catch (error) {
-        console.error('Chat refresh error:', error);
-    }
+    } catch (e) {}
 }
 
-function updateChatMessages(container, messages) {
-    const currentIds = new Set(
-        Array.from(container.querySelectorAll('.chat-message'))
-            .map(m => m.dataset.messageId)
-    );
+function escapeHtmlChat(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-    messages.forEach(msg => {
-        if (!currentIds.has(String(msg.id))) {
-            const messageEl = createChatMessageElement(msg);
-            container.appendChild(messageEl);
-        }
-    });
-}
-
-function createChatMessageElement(msg) {
-    const div = document.createElement('div');
-    div.className = 'chat-message';
-    div.dataset.messageId = msg.id;
-
-    const avatarContent = msg.avatar
-        ? `<img src="/uploads/${msg.avatar}" alt="">`
-        : `<span>${msg.username[0].toUpperCase()}</span>`;
-
-    div.innerHTML = `
-        <div class="chat-message-avatar">${avatarContent}</div>
-        <div class="chat-message-content">
-            <a href="/profile/${msg.username}" class="chat-message-author">${msg.username}</a>
-            <div class="chat-message-text">${escapeHtml(msg.content)}</div>
-        </div>
-    `;
-
-    return div;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function startCooldown(seconds) {
-    chatCooldown = seconds;
-    const cooldownDisplay = document.getElementById('chat-cooldown');
-    const chatInput = document.getElementById('global-chat-input');
-    const chatSubmit = document.querySelector('#global-chat-form button[type="submit"]');
-
-    if (chatInput) chatInput.disabled = true;
-    if (chatSubmit) chatSubmit.disabled = true;
-
+function startCooldown(s) {
+    chatCooldown = s;
+    var display = document.getElementById('chat-cooldown');
+    var input = document.getElementById('global-chat-input');
+    var submit = document.querySelector('#global-chat-form button[type="submit"]');
+    if (input) input.disabled = true;
+    if (submit) submit.disabled = true;
     if (cooldownInterval) clearInterval(cooldownInterval);
-
     updateCooldownDisplay();
-
-    cooldownInterval = setInterval(() => {
+    cooldownInterval = setInterval(function() {
         chatCooldown--;
         updateCooldownDisplay();
-
         if (chatCooldown <= 0) {
             clearInterval(cooldownInterval);
-            if (chatInput) chatInput.disabled = false;
-            if (chatSubmit) chatSubmit.disabled = false;
-            if (cooldownDisplay) cooldownDisplay.style.display = 'none';
+            if (input) input.disabled = false;
+            if (submit) submit.disabled = false;
+            if (display) display.style.display = 'none';
         }
     }, 1000);
 }
 
 function updateCooldownDisplay() {
-    const cooldownDisplay = document.getElementById('chat-cooldown');
-    if (cooldownDisplay) {
-        if (chatCooldown > 0) {
-            cooldownDisplay.style.display = 'block';
-            cooldownDisplay.textContent = `Подождите: ${chatCooldown} сек`;
-        } else {
-            cooldownDisplay.style.display = 'none';
-        }
-    }
+    var d = document.getElementById('chat-cooldown');
+    if (d) { d.style.display = chatCooldown > 0 ? 'block' : 'none'; d.textContent = 'Подождите: ' + chatCooldown + ' сек'; }
 }
 
 async function checkCooldownStatus() {
     try {
-        const response = await fetch('/api/chat/cooldown');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.cooldown > 0) {
-                startCooldown(data.cooldown);
-            }
-        }
-    } catch (error) {
-        console.error('Cooldown check error:', error);
-    }
+        var r = await fetch('/api/chat/cooldown');
+        if (r.ok) { var d = await r.json(); if (d.cooldown > 0) startCooldown(d.cooldown); }
+    } catch (e) {}
 }
 
 function initPrivateChat() {
-    const messageContainer = document.getElementById('private-messages');
-    if (messageContainer) {
-        scrollToBottom(messageContainer);
-    }
-
-    const messageForm = document.getElementById('private-message-form');
-    if (messageForm) {
-        messageForm.addEventListener('submit', function(e) {
-            const input = this.querySelector('input[name="content"]');
-            if (input && !input.value.trim()) {
-                e.preventDefault();
-            }
-        });
-    }
+    var c = document.getElementById('private-messages');
+    if (c) scrollToBottom(c);
 }

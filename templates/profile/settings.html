@@ -3,26 +3,26 @@
 
 {% block content %}
 <div style="max-width: 600px;">
-    <h1 style="margin-bottom: 1.5rem;">⚙️ Настройки</h1>
+    <h1 class="page-title">⚙️ Настройки</h1>
 
     <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-header">
-            <h3 class="card-title">Профиль</h3>
+            <h3 class="card-title">👤 Профиль</h3>
         </div>
         <div class="card-body">
             <form method="POST" action="/profile/settings" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="update_profile">
-                
+
                 <div class="form-group">
                     <label class="form-label">Аватар</label>
                     <div class="file-upload" style="padding: 1rem;">
                         <input type="file" name="avatar" accept="image/*">
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--border-color);">
                                 {% if current_user.avatar %}
                                 <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
                                 {% else %}
-                                {{ current_user.username[0]|upper }}
+                                <span style="font-weight: 800; font-size: 1.5rem;">{{ current_user.username[0]|upper }}</span>
                                 {% endif %}
                             </div>
                             <div>
@@ -55,22 +55,129 @@
 
     <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-header">
-            <h3 class="card-title">Изменить пароль</h3>
+            <h3 class="card-title">🎨 Тема оформления</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/profile/settings" id="theme-form">
+                <input type="hidden" name="action" value="change_theme">
+
+                <div class="form-group">
+                    <label class="form-label">Выберите тему</label>
+                    <div class="theme-options">
+                        <label class="theme-option {% if current_user.theme == 'dark' or not current_user.theme %}active{% endif %}">
+                            <input type="radio" name="theme" value="dark"
+                                   {% if current_user.theme == 'dark' or not current_user.theme %}checked{% endif %}>
+                            <div class="theme-preview theme-preview-dark">
+                                <div class="theme-preview-nav"></div>
+                                <div class="theme-preview-content">
+                                    <div class="theme-preview-card"></div>
+                                    <div class="theme-preview-card"></div>
+                                </div>
+                            </div>
+                            <span class="theme-label">🌙 Тёмная</span>
+                        </label>
+
+                        <label class="theme-option {% if current_user.theme == 'light' %}active{% endif %}">
+                            <input type="radio" name="theme" value="light"
+                                   {% if current_user.theme == 'light' %}checked{% endif %}>
+                            <div class="theme-preview theme-preview-light">
+                                <div class="theme-preview-nav"></div>
+                                <div class="theme-preview-content">
+                                    <div class="theme-preview-card"></div>
+                                    <div class="theme-preview-card"></div>
+                                </div>
+                            </div>
+                            <span class="theme-label">☀️ Светлая</span>
+                        </label>
+
+                        <label class="theme-option {% if current_user.theme == 'custom' %}active{% endif %}">
+                            <input type="radio" name="theme" value="custom"
+                                   {% if current_user.theme == 'custom' %}checked{% endif %}>
+                            <div class="theme-preview theme-preview-custom">
+                                <div class="theme-preview-nav"></div>
+                                <div class="theme-preview-content">
+                                    <div class="theme-preview-card"></div>
+                                    <div class="theme-preview-card"></div>
+                                </div>
+                            </div>
+                            <span class="theme-label">🎨 Своя</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="custom-theme-settings {% if current_user.theme != 'custom' %}hidden{% endif %}" id="custom-theme-settings">
+                    <div class="alert alert-info" style="margin-bottom: 1rem;">
+                        Настройте цвета под себя
+                    </div>
+
+                    <div class="color-pickers-grid">
+                        <div class="form-group">
+                            <label class="form-label">Фон страницы</label>
+                            <div class="color-picker-wrap">
+                                <input type="color" name="custom_bg"
+                                       value="{{ current_user.custom_bg or '#0d1117' }}"
+                                       class="color-input">
+                                <input type="text" value="{{ current_user.custom_bg or '#0d1117' }}"
+                                       class="form-control color-text" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Фон карточек</label>
+                            <div class="color-picker-wrap">
+                                <input type="color" name="custom_secondary"
+                                       value="{{ current_user.custom_secondary or '#161b22' }}"
+                                       class="color-input">
+                                <input type="text" value="{{ current_user.custom_secondary or '#161b22' }}"
+                                       class="form-control color-text" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Акцентный цвет</label>
+                            <div class="color-picker-wrap">
+                                <input type="color" name="custom_accent"
+                                       value="{{ current_user.custom_accent or '#7D71D8' }}"
+                                       class="color-input">
+                                <input type="text" value="{{ current_user.custom_accent or '#7D71D8' }}"
+                                       class="form-control color-text" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Цвет текста</label>
+                            <div class="color-picker-wrap">
+                                <input type="color" name="custom_text"
+                                       value="{{ current_user.custom_text or '#f0f6fc' }}"
+                                       class="color-input">
+                                <input type="text" value="{{ current_user.custom_text or '#f0f6fc' }}"
+                                       class="form-control color-text" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Применить тему</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <h3 class="card-title">🔒 Изменить пароль</h3>
         </div>
         <div class="card-body">
             <form method="POST" action="/profile/settings">
                 <input type="hidden" name="action" value="change_password">
-                
+
                 <div class="form-group">
                     <label class="form-label">Текущий пароль</label>
                     <input type="password" name="current_password" class="form-control" required>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Новый пароль</label>
                     <input type="password" name="new_password" class="form-control" minlength="4" required>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Подтвердите новый пароль</label>
                     <input type="password" name="confirm_password" class="form-control" required>
@@ -82,12 +189,12 @@
     </div>
 
     <div class="card" style="border-color: var(--danger);">
-        <div class="card-header" style="background: rgba(218, 54, 51, 0.1);">
+        <div class="card-header" style="background: rgba(218, 54, 51, 0.08);">
             <h3 class="card-title" style="color: var(--danger);">⚠️ Опасная зона</h3>
         </div>
         <div class="card-body">
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Удаление аккаунта необратимо. Все ваши данные, посты, комментарии и каналы будут удалены навсегда.
+            <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                Удаление аккаунта необратимо. Все данные, посты и каналы будут удалены навсегда.
             </p>
             <button class="btn btn-danger" data-modal="delete-account-modal">
                 🗑️ Удалить аккаунт
@@ -107,7 +214,7 @@
                 <div class="alert alert-danger">
                     <strong>Внимание!</strong> Это действие нельзя отменить.
                 </div>
-                <p style="margin-bottom: 1rem;">Для подтверждения введите свой пароль:</p>
+                <p style="margin-bottom: 1rem; font-size: 0.9rem;">Введите пароль для подтверждения:</p>
                 <input type="hidden" name="action" value="delete_account">
                 <div class="form-group">
                     <input type="password" name="delete_password" class="form-control" placeholder="Введите пароль" required>
@@ -120,4 +227,157 @@
         </form>
     </div>
 </div>
+
+<style>
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.theme-option {
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-option input[type="radio"] { display: none; }
+
+.theme-option:hover { border-color: var(--accent-purple); }
+
+.theme-option.active {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 2px var(--accent-green-alpha);
+}
+
+.theme-preview {
+    height: 80px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.theme-preview-dark { background: #0d1117; }
+.theme-preview-light { background: #f4f6f8; }
+.theme-preview-custom {
+    background: linear-gradient(135deg, #1a1a2e 0%, #7D71D8 100%);
+}
+
+.theme-preview-nav {
+    height: 12px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.12);
+}
+
+.theme-preview-light .theme-preview-nav {
+    background: rgba(0,0,0,0.1);
+}
+
+.theme-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.theme-preview-card {
+    flex: 1;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+}
+
+.theme-preview-light .theme-preview-card {
+    background: rgba(0,0,0,0.07);
+}
+
+.theme-label {
+    display: block;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+
+.color-pickers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.color-picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.color-input {
+    width: 44px;
+    height: 38px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 2px;
+    background: var(--bg-tertiary);
+    flex-shrink: 0;
+}
+
+.color-text {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+    .theme-options { grid-template-columns: 1fr 1fr; }
+    .color-pickers-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var themeRadios = document.querySelectorAll('input[name="theme"]');
+    var customSettings = document.getElementById('custom-theme-settings');
+    var themeOptions = document.querySelectorAll('.theme-option');
+
+    function updateThemeUI() {
+        var selected = document.querySelector('input[name="theme"]:checked');
+        if (!selected) return;
+
+        themeOptions.forEach(function(opt) {
+            opt.classList.remove('active');
+        });
+        if (selected.closest('.theme-option')) {
+            selected.closest('.theme-option').classList.add('active');
+        }
+
+        if (customSettings) {
+            customSettings.style.display = selected.value === 'custom' ? 'block' : 'none';
+        }
+    }
+
+    themeRadios.forEach(function(radio) {
+        radio.addEventListener('change', updateThemeUI);
+    });
+
+    document.querySelectorAll('.color-input').forEach(function(input) {
+        var textEl = input.parentElement.querySelector('.color-text');
+        input.addEventListener('input', function() {
+            if (textEl) textEl.value = this.value;
+        });
+    });
+
+    updateThemeUI();
+});
+</script>
 {% endblock %}

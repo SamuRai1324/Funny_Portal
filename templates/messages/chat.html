@@ -5,14 +5,12 @@
 {% block content %}
 <div class="chat-page">
     <div class="chat-header-bar">
-        <a href="/messages" class="back-link">← Назад к сообщениям</a>
+        <a href="/messages" class="back-link">← Назад</a>
         <div class="chat-user-info">
             <div class="chat-user-avatar">
                 {% if other_user.avatar %}
                 <img src="{{ url_for('uploaded_file', filename=other_user.avatar) }}" alt="">
-                {% else %}
-                {{ other_user.username[0]|upper }}
-                {% endif %}
+                {% else %}{{ other_user.username[0]|upper }}{% endif %}
             </div>
             <a href="/profile/{{ other_user.username }}" class="chat-user-name">{{ other_user.username }}</a>
         </div>
@@ -30,15 +28,22 @@
                         <div class="private-message-avatar">
                             {% if msg.avatar %}
                             <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
-                            {% else %}
-                            {{ msg.username[0]|upper }}
-                            {% endif %}
+                            {% else %}{{ msg.username[0]|upper }}{% endif %}
                         </div>
                         <div class="private-message-bubble">
+                            {% if msg.file_path %}
+                                {% if msg.file_type == 'photo' %}
+                                <img src="{{ url_for('uploaded_file', filename=msg.file_path) }}" alt="" class="msg-media-img">
+                                {% elif msg.file_type == 'video' %}
+                                <video src="{{ url_for('uploaded_file', filename=msg.file_path) }}" controls class="msg-media-video"></video>
+                                {% elif msg.file_type == 'audio' %}
+                                <audio src="{{ url_for('uploaded_file', filename=msg.file_path) }}" controls class="msg-media-audio"></audio>
+                                {% endif %}
+                            {% endif %}
+                            {% if msg.content %}
                             <div class="private-message-text">{{ msg.content }}</div>
-                            <div class="private-message-time" data-utc="{{ msg.created_at }}">
-                                {{ msg.created_at[11:16] }}
-                            </div>
+                            {% endif %}
+                            <div class="private-message-time" data-utc="{{ msg.created_at }}">{{ msg.created_at[11:16] }}</div>
                         </div>
                     </div>
                     {% else %}
@@ -49,9 +54,14 @@
                     {% endfor %}
                 </div>
 
-                <form id="private-message-form" method="POST" class="private-message-form">
-                    <input type="text" name="content" placeholder="Написать сообщение..." class="form-control message-input" autocomplete="off" required>
-                    <button type="submit" class="btn send-btn">Отправить</button>
+                <form id="private-message-form" method="POST" enctype="multipart/form-data" class="private-message-form">
+                    <button type="button" class="msg-attach-btn" id="attach-media-btn" title="Прикрепить">
+                        📎
+                    </button>
+                    <input type="file" name="media" id="msg-media-input" accept="image/*,video/*,audio/*" style="display: none;">
+                    <div id="msg-media-preview" class="msg-media-preview" style="display: none;"></div>
+                    <input type="text" name="content" placeholder="Сообщение..." class="form-control message-input" autocomplete="off">
+                    <button type="submit" class="btn send-btn">➤</button>
                 </form>
             </div>
         </div>
@@ -67,18 +77,12 @@
                         <div class="chat-message-avatar">
                             {% if msg.avatar %}
                             <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
-                            {% else %}
-                            {{ msg.username[0]|upper }}
-                            {% endif %}
+                            {% else %}{{ msg.username[0]|upper }}{% endif %}
                         </div>
                         <div class="chat-message-content">
                             <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
                             <div class="chat-message-text">{{ msg.content }}</div>
                         </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-state" style="padding: 2rem;">
-                        <p>Сообщений пока нет</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -93,10 +97,7 @@
 </div>
 
 <style>
-.chat-page {
-    max-width: 1200px;
-    margin: 0 auto;
-}
+.chat-page { max-width: 1200px; margin: 0 auto; }
 
 .chat-header-bar {
     display: flex;
@@ -105,40 +106,17 @@
     margin-bottom: 1rem;
 }
 
-.back-link {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.back-link:hover { color: var(--accent-green); }
-
-.chat-user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
+.chat-user-info { display: flex; align-items: center; gap: 0.75rem; }
 
 .chat-user-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
+    width: 42px; height: 42px; border-radius: 50%;
     background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    font-weight: 600;
-    color: var(--text-primary);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-weight: 700; color: var(--text-primary);
+    border: 2px solid var(--border-color);
 }
-
 .chat-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.chat-user-name {
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: var(--text-primary);
-}
-
+.chat-user-name { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); }
 .chat-user-name:hover { color: var(--accent-green); }
 
 .chat-page-layout {
@@ -147,7 +125,7 @@
     gap: 1.5rem;
 }
 
-.chat-private-section { min-width: 0; }
+.chat-private-section,
 .chat-global-section { min-width: 0; }
 
 .chat-container {
@@ -157,170 +135,127 @@
 }
 
 .private-messages-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex: 1; overflow-y: auto; padding: 1rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
 }
 
-.private-message {
-    display: flex;
-    gap: 0.75rem;
-}
-
+.private-message { display: flex; gap: 0.75rem; }
 .private-message.own-message { flex-direction: row-reverse; }
 
 .private-message-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 34px; height: 34px; border-radius: 50%;
     background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-    overflow: hidden;
-    font-weight: 600;
-    color: var(--text-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0; overflow: hidden;
+    font-weight: 700; color: var(--text-primary);
+    border: 2px solid var(--border-color);
 }
-
 .private-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .private-message-bubble {
-    max-width: 70%;
-    padding: 0.75rem 1rem;
-    border-radius: 16px;
-    background: var(--bg-tertiary);
+    max-width: 70%; padding: 0.65rem 0.875rem;
+    border-radius: 16px; background: var(--bg-tertiary);
     border-bottom-left-radius: 4px;
 }
-
 .own-message .private-message-bubble {
-    background: var(--accent-primary);
+    background: var(--accent-purple);
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 4px;
 }
+.private-message-text { font-size: 0.9rem; word-break: break-word; color: var(--text-primary); }
+.private-message-time { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.2rem; text-align: right; }
+.own-message .private-message-time { color: rgba(255,255,255,0.55); }
 
-.private-message-text {
-    font-size: 0.95rem;
-    word-break: break-word;
-    color: var(--text-primary);
-}
-
-.private-message-time {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 0.25rem;
-    text-align: right;
-}
-
-.own-message .private-message-time { color: rgba(255,255,255,0.6); }
+.msg-media-img { max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 0.4rem; display: block; }
+.msg-media-video { max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 0.4rem; display: block; }
+.msg-media-audio { width: 100%; margin-bottom: 0.4rem; }
 
 .chat-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
 }
 
 .private-message-form {
-    padding: 1rem;
+    padding: 0.875rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     gap: 0.5rem;
-}
-
-.message-input {
-    margin: 0;
-    border-radius: 20px;
-}
-
-.send-btn { border-radius: 20px; padding: 0 1.5rem; }
-
-.chat-box-large {
-    display: flex;
-    flex-direction: column;
-    height: 520px;
-}
-
-.chat-box-large .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.chat-box-large .chat-message {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.chat-box-large .chat-message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    flex-shrink: 0;
-    overflow: hidden;
-    color: var(--text-primary);
+    flex-wrap: wrap;
 }
 
-.chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.chat-box-large .chat-message-content { flex: 1; min-width: 0; }
-.chat-box-large .chat-message-author { font-size: 0.8rem; font-weight: 600; color: var(--accent-green); display: block; }
-.chat-box-large .chat-message-text { font-size: 0.9rem; color: var(--text-primary); word-break: break-word; }
-
-.chat-box-large .chat-input {
-    display: flex;
-    gap: 0.5rem;
-    padding: 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.chat-box-large .chat-input input {
-    flex: 1;
+.msg-attach-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: 0.6rem 1rem;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-}
-
-.chat-box-large .chat-input input:focus {
-    outline: none;
-    border-color: var(--accent-purple);
-}
-
-.chat-box-large .chat-input button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--accent-gradient);
-    border: none;
-    color: white;
+    font-size: 1.15rem;
     cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
     transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
     flex-shrink: 0;
 }
+.msg-attach-btn:hover { background: var(--border-color); }
 
-.chat-box-large .chat-input button:hover {
-    transform: scale(1.1);
-    box-shadow: var(--shadow-glow-green);
+.msg-media-preview {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.25rem;
 }
+.msg-media-preview img,
+.msg-media-preview video {
+    max-width: 100%;
+    max-height: 120px;
+    border-radius: var(--radius-sm);
+}
+
+.message-input { margin: 0; border-radius: 20px; flex: 1; }
+.send-btn { border-radius: 20px; padding: 0 1.25rem; flex-shrink: 0; }
+
+.chat-box-large {
+    display: flex; flex-direction: column; height: 520px;
+}
+.chat-box-large .chat-messages {
+    flex: 1; overflow-y: auto; padding: 0.875rem;
+    display: flex; flex-direction: column; gap: 0.65rem;
+}
+.chat-box-large .chat-message { display: flex; gap: 0.65rem; }
+.chat-box-large .chat-message-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 700;
+    flex-shrink: 0; overflow: hidden; color: var(--text-primary);
+    border: 2px solid var(--border-color);
+}
+.chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.chat-box-large .chat-message-content { flex: 1; min-width: 0; }
+.chat-box-large .chat-message-author { font-size: 0.78rem; font-weight: 700; color: var(--accent-green); display: block; }
+.chat-box-large .chat-message-text { font-size: 0.875rem; color: var(--text-primary); word-break: break-word; }
+
+.chat-box-large .chat-input {
+    display: flex; gap: 0.4rem; padding: 0.875rem;
+    border-top: 1px solid var(--border-color);
+}
+.chat-box-large .chat-input input {
+    flex: 1; background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: 0.55rem 0.875rem;
+    color: var(--text-primary); font-size: 0.85rem;
+    font-family: var(--font-family);
+}
+.chat-box-large .chat-input input:focus { outline: none; border-color: var(--accent-purple); }
+.chat-box-large .chat-input button {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent-gradient);
+    border: none; color: white; cursor: pointer;
+    transition: var(--transition);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+.chat-box-large .chat-input button:hover { transform: scale(1.1); }
 
 @media (max-width: 900px) {
     .chat-page-layout { grid-template-columns: 1fr; }
@@ -333,25 +268,65 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const privateMessages = document.getElementById('private-messages');
-    if (privateMessages) {
-        privateMessages.scrollTop = privateMessages.scrollHeight;
-    }
+    var pm = document.getElementById('private-messages');
+    if (pm) pm.scrollTop = pm.scrollHeight;
 
-    const globalMessages = document.getElementById('global-chat-messages');
-    if (globalMessages) {
-        globalMessages.scrollTop = globalMessages.scrollHeight;
+    var gm = document.getElementById('global-chat-messages');
+    if (gm) gm.scrollTop = gm.scrollHeight;
+
+    var attachBtn = document.getElementById('attach-media-btn');
+    var mediaInput = document.getElementById('msg-media-input');
+    var mediaPreview = document.getElementById('msg-media-preview');
+
+    if (attachBtn && mediaInput) {
+        attachBtn.addEventListener('click', function() {
+            mediaInput.click();
+        });
+
+        mediaInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                var file = this.files[0];
+                mediaPreview.innerHTML = '';
+                mediaPreview.style.display = 'block';
+
+                if (file.type.startsWith('image/')) {
+                    var img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    mediaPreview.appendChild(img);
+                } else if (file.type.startsWith('video/')) {
+                    var video = document.createElement('video');
+                    video.src = URL.createObjectURL(file);
+                    video.controls = true;
+                    mediaPreview.appendChild(video);
+                } else if (file.type.startsWith('audio/')) {
+                    var audio = document.createElement('audio');
+                    audio.src = URL.createObjectURL(file);
+                    audio.controls = true;
+                    audio.style.width = '100%';
+                    mediaPreview.appendChild(audio);
+                } else {
+                    mediaPreview.innerHTML = '<p style="color:var(--text-muted);">' + file.name + '</p>';
+                }
+
+                var removeBtn = document.createElement('button');
+                removeBtn.textContent = '✕ Убрать';
+                removeBtn.style.cssText = 'margin-top:0.4rem;background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.25rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.78rem;';
+                removeBtn.addEventListener('click', function() {
+                    mediaInput.value = '';
+                    mediaPreview.innerHTML = '';
+                    mediaPreview.style.display = 'none';
+                });
+                mediaPreview.appendChild(removeBtn);
+            }
+        });
     }
 
     document.querySelectorAll('.private-message-time[data-utc]').forEach(function(el) {
-        const utcStr = el.dataset.utc;
+        var utcStr = el.getAttribute('data-utc');
         if (!utcStr) return;
-        const date = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
+        var date = new Date(utcStr.indexOf('Z') > -1 ? utcStr : utcStr + 'Z');
         if (isNaN(date.getTime())) return;
-        el.textContent = date.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        el.textContent = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     });
 });
 </script>

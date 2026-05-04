@@ -2,333 +2,168 @@ document.addEventListener('DOMContentLoaded', function() {
     initDropdowns();
     initModals();
     initFileUploads();
-    initVideoPreview();
     initScrollToTop();
     initLocalTime();
     initReadMore();
+    initSlideshows();
 });
 
 function initDropdowns() {
-    document.querySelectorAll('.dropdown').forEach(dropdown => {
-        dropdown.addEventListener('click', function(e) {
+    document.querySelectorAll('.dropdown').forEach(function(d) {
+        d.addEventListener('click', function(e) {
             e.stopPropagation();
             this.classList.toggle('active');
         });
     });
-
     document.addEventListener('click', function() {
-        document.querySelectorAll('.dropdown.active').forEach(d => {
-            d.classList.remove('active');
-        });
+        document.querySelectorAll('.dropdown.active').forEach(function(d) { d.classList.remove('active'); });
     });
 }
 
 function initModals() {
-    document.querySelectorAll('[data-modal]').forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
+    document.querySelectorAll('[data-modal]').forEach(function(t) {
+        t.addEventListener('click', function(e) {
             e.preventDefault();
-            const modalId = this.dataset.modal;
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
+            var m = document.getElementById(this.dataset.modal);
+            if (m) { m.classList.add('active'); document.body.style.overflow = 'hidden'; }
         });
     });
-
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal(this);
-            }
-        });
+    document.querySelectorAll('.modal-overlay').forEach(function(o) {
+        o.addEventListener('click', function(e) { if (e.target === this) closeModal(this); });
     });
-
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const modal = this.closest('.modal-overlay');
-            if (modal) closeModal(modal);
-        });
+    document.querySelectorAll('.modal-close').forEach(function(b) {
+        b.addEventListener('click', function() { var m = this.closest('.modal-overlay'); if (m) closeModal(m); });
     });
-
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay.active').forEach(modal => {
-                closeModal(modal);
-            });
-        }
+        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(closeModal);
     });
 }
 
-function closeModal(modal) {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-}
+function closeModal(m) { m.classList.remove('active'); document.body.style.overflow = ''; }
 
 function initFileUploads() {
-    document.querySelectorAll('.file-upload').forEach(upload => {
-        const input = upload.querySelector('input[type="file"]');
+    document.querySelectorAll('.file-upload').forEach(function(u) {
+        var input = u.querySelector('input[type="file"]');
         if (!input) return;
-
-        const preview = upload.querySelector('.file-preview');
-        const text = upload.querySelector('.file-upload-text');
-
-        upload.addEventListener('click', function(e) {
-            if (e.target !== input) input.click();
-        });
-
-        upload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            upload.classList.add('dragover');
-        });
-
-        upload.addEventListener('dragleave', () => {
-            upload.classList.remove('dragover');
-        });
-
-        upload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            upload.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                input.files = e.dataTransfer.files;
-                handleFileSelect(input, preview, text);
-            }
-        });
-
-        input.addEventListener('change', () => {
-            handleFileSelect(input, preview, text);
-        });
+        var preview = u.querySelector('.file-preview');
+        var text = u.querySelector('.file-upload-text');
+        u.addEventListener('click', function(e) { if (e.target !== input) input.click(); });
+        u.addEventListener('dragover', function(e) { e.preventDefault(); u.classList.add('dragover'); });
+        u.addEventListener('dragleave', function() { u.classList.remove('dragover'); });
+        u.addEventListener('drop', function(e) { e.preventDefault(); u.classList.remove('dragover'); if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; handleFileSelect(input, preview, text); } });
+        input.addEventListener('change', function() { handleFileSelect(input, preview, text); });
     });
 }
 
 function handleFileSelect(input, preview, text) {
-    const files = Array.from(input.files);
-    if (files.length === 0) return;
-
-    if (text) {
-        text.textContent = files.length === 1 ? files[0].name : `Выбрано файлов: ${files.length}`;
-    }
-
+    var files = Array.from(input.files);
+    if (!files.length) return;
+    if (text) text.textContent = files.length === 1 ? files[0].name : files.length + ' файлов';
     if (preview) {
         preview.innerHTML = '';
-        files.forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.style.cssText = 'max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;display:block;margin-left:auto;margin-right:auto;';
+        files.forEach(function(f) {
+            if (f.type.startsWith('image/')) {
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(f);
+                img.style.cssText = 'max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;display:block;margin-left:auto;margin-right:auto;';
                 preview.appendChild(img);
-            } else if (file.type.startsWith('video/')) {
-                const video = document.createElement('video');
-                video.src = URL.createObjectURL(file);
-                video.controls = true;
-                video.style.cssText = 'max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;display:block;';
-                preview.appendChild(video);
-            } else if (file.type.startsWith('audio/')) {
-                const audio = document.createElement('audio');
-                audio.src = URL.createObjectURL(file);
-                audio.controls = true;
-                audio.style.cssText = 'width:100%;margin-top:10px;';
-                preview.appendChild(audio);
+            } else if (f.type.startsWith('video/')) {
+                var v = document.createElement('video');
+                v.src = URL.createObjectURL(f);
+                v.controls = true;
+                v.style.cssText = 'max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;';
+                preview.appendChild(v);
             }
         });
     }
 }
 
-function initVideoPreview() {
-    document.querySelectorAll('.video-preview-container video').forEach(video => {
-        video.addEventListener('mouseenter', function() {
-            this.play().catch(() => {});
-        });
-
-        video.addEventListener('mouseleave', function() {
-            this.pause();
-            this.currentTime = 0;
-        });
-    });
-}
-
 function initScrollToTop() {
-    const scrollBtn = document.createElement('button');
-    scrollBtn.innerHTML = '↑';
-    scrollBtn.className = 'scroll-to-top';
-    scrollBtn.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--accent-gradient);
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s;
-        z-index: 999;
-    `;
-    document.body.appendChild(scrollBtn);
-
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 300) {
-            scrollBtn.style.opacity = '1';
-            scrollBtn.style.visibility = 'visible';
-        } else {
-            scrollBtn.style.opacity = '0';
-            scrollBtn.style.visibility = 'hidden';
-        }
+    var btn = document.createElement('button');
+    btn.innerHTML = '↑';
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:var(--accent-gradient);border:none;color:white;font-size:1.3rem;cursor:pointer;opacity:0;visibility:hidden;transition:all 0.3s;z-index:999;';
+    document.body.appendChild(btn);
+    window.addEventListener('scroll', function() {
+        btn.style.opacity = window.scrollY > 300 ? '1' : '0';
+        btn.style.visibility = window.scrollY > 300 ? 'visible' : 'hidden';
     });
-
-    scrollBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    btn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 }
 
 function initLocalTime() {
-    document.querySelectorAll('[data-utc]').forEach(el => {
-        const utcStr = el.dataset.utc;
-        if (!utcStr) return;
-
-        const date = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
-        if (isNaN(date.getTime())) return;
-
-        const now = new Date();
-        const diff = Math.floor((now - date) / 1000);
-
-        if (diff < 60) {
-            el.textContent = 'только что';
-        } else if (diff < 3600) {
-            el.textContent = `${Math.floor(diff / 60)} мин назад`;
-        } else if (diff < 86400) {
-            el.textContent = `${Math.floor(diff / 3600)} ч назад`;
-        } else if (diff < 604800) {
-            el.textContent = `${Math.floor(diff / 86400)} д назад`;
-        } else {
-            el.textContent = date.toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
+    document.querySelectorAll('[data-utc]').forEach(function(el) {
+        var s = el.dataset.utc;
+        if (!s) return;
+        var d = new Date(s.includes('Z') ? s : s + 'Z');
+        if (isNaN(d.getTime())) return;
+        var diff = Math.floor((new Date() - d) / 1000);
+        if (diff < 60) el.textContent = 'сейчас';
+        else if (diff < 3600) el.textContent = Math.floor(diff / 60) + ' мин назад';
+        else if (diff < 86400) el.textContent = Math.floor(diff / 3600) + ' ч назад';
+        else if (diff < 604800) el.textContent = Math.floor(diff / 86400) + ' д назад';
+        else el.textContent = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     });
 }
 
 function initReadMore() {
     document.querySelectorAll('.read-more-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const postCard = this.closest('.post-card');
-            const postText = postCard.querySelector('.post-text');
-
-            if (postText.classList.contains('truncated')) {
-                postText.classList.remove('truncated');
-                postText.classList.add('expanded');
+            var card = this.closest('.post-card');
+            var text = card.querySelector('.post-text');
+            if (text.classList.contains('truncated')) {
+                text.classList.remove('truncated');
+                text.classList.add('expanded');
                 this.textContent = 'Свернуть ↑';
             } else {
-                postText.classList.add('truncated');
-                postText.classList.remove('expanded');
+                text.classList.add('truncated');
+                text.classList.remove('expanded');
                 this.textContent = 'Читать далее ↓';
-                postCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         });
     });
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+function initSlideshows() {
+    document.querySelectorAll('.slideshow').forEach(function(ss) {
+        var track = ss.querySelector('.slideshow-track');
+        var slides = ss.querySelectorAll('.slideshow-slide');
+        var prev = ss.querySelector('.slideshow-prev');
+        var next = ss.querySelector('.slideshow-next');
+        var dots = ss.querySelectorAll('.slideshow-dot');
+        var current = 0;
+        var total = slides.length;
+        if (total <= 1) return;
 
-    const colors = {
-        success: 'var(--accent-green)',
-        danger: 'var(--danger)',
-        warning: 'var(--warning)',
-        info: 'var(--accent-blue)'
-    };
+        function goTo(i) {
+            if (i < 0) i = total - 1;
+            if (i >= total) i = 0;
+            current = i;
+            track.style.transform = 'translateX(-' + (current * 100) + '%)';
+            dots.forEach(function(d, idx) { d.classList.toggle('active', idx === current); });
+        }
 
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%) translateY(100px);
-        background: var(--bg-secondary);
-        border: 1px solid ${colors[type] || colors.info};
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        z-index: 10000;
-        transition: transform 0.3s ease;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-    `;
+        if (prev) prev.addEventListener('click', function() { goTo(current - 1); });
+        if (next) next.addEventListener('click', function() { goTo(current + 1); });
+        dots.forEach(function(d) { d.addEventListener('click', function() { goTo(parseInt(this.dataset.index)); }); });
 
-    const icons = { success: '✓', danger: '✕', warning: '⚠️', info: 'ℹ' };
-    toast.innerHTML = `<span style="color:${colors[type] || colors.info}">${icons[type] || icons.info}</span><span>${message}</span>`;
+        var startX = 0, diff = 0;
+        ss.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+        ss.addEventListener('touchmove', function(e) { diff = e.touches[0].clientX - startX; }, { passive: true });
+        ss.addEventListener('touchend', function() { if (Math.abs(diff) > 50) { goTo(diff > 0 ? current - 1 : current + 1); } diff = 0; });
+    });
+}
 
+function showToast(message, type) {
+    type = type || 'info';
+    var colors = { success: 'var(--accent-green)', danger: 'var(--danger)', warning: 'var(--warning)', info: 'var(--accent-blue)' };
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-secondary);border:1px solid ' + (colors[type] || colors.info) + ';padding:0.875rem 1.25rem;border-radius:12px;display:flex;align-items:center;gap:0.65rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:10000;transition:transform 0.3s;color:var(--text-primary);font-size:0.9rem;';
+    toast.innerHTML = '<span>' + message + '</span>';
     document.body.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        toast.style.transform = 'translateX(-50%) translateY(0)';
-    });
-
-    setTimeout(() => {
+    requestAnimationFrame(function() { toast.style.transform = 'translateX(-50%) translateY(0)'; });
+    setTimeout(function() {
         toast.style.transform = 'translateX(-50%) translateY(100px)';
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(function() { toast.remove(); }, 300);
     }, 3000);
-}
-
-function confirmAction(message) {
-    return new Promise((resolve) => {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay active';
-        overlay.innerHTML = `
-            <div class="modal" style="max-width: 400px;">
-                <div class="modal-header">
-                    <h3 class="modal-title">Подтверждение</h3>
-                </div>
-                <div class="modal-body">
-                    <p>${message}</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-action="cancel">Отмена</button>
-                    <button class="btn btn-danger" data-action="confirm">Подтвердить</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        document.body.style.overflow = 'hidden';
-
-        overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
-            overlay.remove();
-            document.body.style.overflow = '';
-            resolve(false);
-        });
-
-        overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
-            overlay.remove();
-            document.body.style.overflow = '';
-            resolve(true);
-        });
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.remove();
-                document.body.style.overflow = '';
-                resolve(false);
-            }
-        });
-    });
 }

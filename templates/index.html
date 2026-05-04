@@ -14,19 +14,19 @@
                 <span class="story-username">Добавить</span>
             </a>
             {% for story in stories %}
-            <a href="/profile/{{ story.username }}" class="story-bubble">
-                <div class="story-avatar">
-                    <div class="story-avatar-inner">
-                        {% if story.avatar %}
-                        <img src="{{ url_for('uploaded_file', filename=story.avatar) }}" alt="">
-                        {% else %}
-                        {{ story.username[0]|upper }}
-                        {% endif %}
-                    </div>
-                </div>
-                <span class="story-username">{{ story.username }}</span>
-            </a>
-            {% endfor %}
+<a href="/story/{{ story.id }}" class="story-bubble">
+    <div class="story-avatar">
+        <div class="story-avatar-inner">
+            {% if story.avatar %}
+            <img src="{{ url_for('uploaded_file', filename=story.avatar) }}" alt="">
+            {% else %}
+            {{ story.username[0]|upper }}
+            {% endif %}
+        </div>
+    </div>
+    <span class="story-username">{{ story.username }}</span>
+</a>
+{% endfor %}
         </div>
     </div>
     {% endif %}

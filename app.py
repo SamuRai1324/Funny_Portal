@@ -4,7 +4,7 @@ from functools import wraps
 import sqlite3
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from config import *
 
 app = Flask(__name__)
@@ -30,9 +30,7 @@ def close_db(exception):
 
 def init_db():
     conn = sqlite3.connect(DATABASE, timeout=30)
-    conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
-
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,12 +41,16 @@ def init_db():
             avatar TEXT,
             banner TEXT,
             bio TEXT,
+            theme TEXT DEFAULT 'dark',
+            custom_bg TEXT,
+            custom_secondary TEXT,
+            custom_accent TEXT,
+            custom_text TEXT,
             is_banned INTEGER DEFAULT 0,
             ban_until TEXT,
             ban_reason TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS user_bans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -56,11 +58,8 @@ def init_db():
             reason TEXT,
             is_permanent INTEGER DEFAULT 0,
             ban_until TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (banned_by) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS channels (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
@@ -68,19 +67,14 @@ def init_db():
             avatar TEXT,
             banner TEXT,
             creator_id INTEGER NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (creator_id) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS channel_subscribers (
             user_id INTEGER NOT NULL,
             channel_id INTEGER NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (user_id, channel_id),
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (channel_id) REFERENCES channels(id)
+            PRIMARY KEY (user_id, channel_id)
         );
-
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -91,91 +85,75 @@ def init_db():
             file_path TEXT,
             is_story INTEGER DEFAULT 0,
             story_expires_at TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (channel_id) REFERENCES channels(id)
+            view_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
+        CREATE TABLE IF NOT EXISTS post_views (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(post_id, user_id)
+        );
         CREATE TABLE IF NOT EXISTS post_files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER NOT NULL,
             file_path TEXT NOT NULL,
             file_type TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (post_id) REFERENCES posts(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS reactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             post_id INTEGER NOT NULL,
             reaction_type TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(user_id, post_id),
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (post_id) REFERENCES posts(id)
+            UNIQUE(user_id, post_id)
         );
-
         CREATE TABLE IF NOT EXISTS comments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL,
             parent_id INTEGER,
             content TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (post_id) REFERENCES posts(id),
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (parent_id) REFERENCES comments(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS hashtags (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL
         );
-
         CREATE TABLE IF NOT EXISTS post_hashtags (
             post_id INTEGER NOT NULL,
             hashtag_id INTEGER NOT NULL,
-            PRIMARY KEY (post_id, hashtag_id),
-            FOREIGN KEY (post_id) REFERENCES posts(id),
-            FOREIGN KEY (hashtag_id) REFERENCES hashtags(id)
+            PRIMARY KEY (post_id, hashtag_id)
         );
-
         CREATE TABLE IF NOT EXISTS conversations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user1_id INTEGER NOT NULL,
             user2_id INTEGER NOT NULL,
             last_message_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(user1_id, user2_id),
-            FOREIGN KEY (user1_id) REFERENCES users(id),
-            FOREIGN KEY (user2_id) REFERENCES users(id)
+            UNIQUE(user1_id, user2_id)
         );
-
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             conversation_id INTEGER NOT NULL,
             sender_id INTEGER NOT NULL,
-            content TEXT NOT NULL,
+            content TEXT,
+            file_path TEXT,
+            file_type TEXT,
             is_read INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (conversation_id) REFERENCES conversations(id),
-            FOREIGN KEY (sender_id) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS global_chat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             content TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS chat_cooldowns (
             user_id INTEGER PRIMARY KEY,
-            cooldown_until TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            cooldown_until TEXT NOT NULL
         );
-
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -183,10 +161,8 @@ def init_db():
             content TEXT NOT NULL,
             link TEXT,
             is_read INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             reporter_id INTEGER NOT NULL,
@@ -198,13 +174,8 @@ def init_db():
             status TEXT DEFAULT 'pending',
             handled_by INTEGER,
             handled_at TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (reporter_id) REFERENCES users(id),
-            FOREIGN KEY (post_id) REFERENCES posts(id),
-            FOREIGN KEY (comment_id) REFERENCES comments(id),
-            FOREIGN KEY (handled_by) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-
         CREATE TABLE IF NOT EXISTS admin_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             admin_id INTEGER NOT NULL,
@@ -212,11 +183,9 @@ def init_db():
             target_type TEXT,
             target_id INTEGER,
             details TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (admin_id) REFERENCES users(id)
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-
     conn.commit()
     conn.close()
 
@@ -229,17 +198,9 @@ def save_file(file, file_type):
     if file and file.filename:
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = f"{uuid.uuid4().hex}.{ext}"
-        folder_map = {
-            'video': 'videos',
-            'photo': 'photos',
-            'audio': 'audio',
-            'story': 'stories',
-            'avatar': 'avatars',
-            'banner': 'banners',
-        }
+        folder_map = {'video': 'videos', 'photo': 'photos', 'audio': 'audio', 'story': 'stories', 'avatar': 'avatars', 'banner': 'banners'}
         folder = UPLOAD_FOLDERS.get(folder_map.get(file_type, 'photos'))
-        filepath = os.path.join(folder, filename)
-        file.save(filepath)
+        file.save(os.path.join(folder, filename))
         return f"{folder_map.get(file_type, 'photos')}/{filename}"
     return None
 
@@ -282,11 +243,8 @@ def role_required(min_role):
         def decorated(*args, **kwargs):
             user = get_current_user()
             if not user:
-                flash('Необходимо войти в аккаунт', 'danger')
                 return redirect('/login')
-            user_role = ROLES.get(user['role'], 0)
-            required_role = ROLES.get(min_role, 999)
-            if user_role < required_role:
+            if ROLES.get(user['role'], 0) < ROLES.get(min_role, 999):
                 flash('Недостаточно прав', 'danger')
                 return redirect('/')
             return f(*args, **kwargs)
@@ -295,21 +253,13 @@ def role_required(min_role):
 
 
 def add_notification(user_id, notif_type, content, link=None):
-    conn = get_db()
-    conn.execute(
-        'INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)',
-        (user_id, notif_type, content, link)
-    )
-    conn.commit()
+    get_db().execute('INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)', (user_id, notif_type, content, link))
+    get_db().commit()
 
 
 def log_admin_action(admin_id, action, target_type=None, target_id=None, details=None):
-    conn = get_db()
-    conn.execute(
-        'INSERT INTO admin_logs (admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?)',
-        (admin_id, action, target_type, target_id, details)
-    )
-    conn.commit()
+    get_db().execute('INSERT INTO admin_logs (admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?)', (admin_id, action, target_type, target_id, details))
+    get_db().commit()
 
 
 def extract_hashtags(text):
@@ -323,72 +273,53 @@ def save_hashtags(post_id, hashtags):
     conn = get_db()
     for tag in hashtags:
         existing = conn.execute('SELECT id FROM hashtags WHERE name = ?', (tag.lower(),)).fetchone()
-        if existing:
-            hashtag_id = existing['id']
-        else:
-            cursor = conn.execute('INSERT INTO hashtags (name) VALUES (?)', (tag.lower(),))
-            hashtag_id = cursor.lastrowid
-        conn.execute('INSERT OR IGNORE INTO post_hashtags (post_id, hashtag_id) VALUES (?, ?)', (post_id, hashtag_id))
+        hid = existing['id'] if existing else conn.execute('INSERT INTO hashtags (name) VALUES (?)', (tag.lower(),)).lastrowid
+        conn.execute('INSERT OR IGNORE INTO post_hashtags (post_id, hashtag_id) VALUES (?, ?)', (post_id, hid))
     conn.commit()
 
 
 def get_chat_messages():
-    conn = get_db()
-    return conn.execute('''
-        SELECT g.*, u.username, u.avatar
-        FROM global_chat g
-        JOIN users u ON g.user_id = u.id
-        ORDER BY g.id DESC LIMIT 50
-    ''').fetchall()[::-1]
+    return get_db().execute('SELECT g.*, u.username, u.avatar FROM global_chat g JOIN users u ON g.user_id = u.id ORDER BY g.id DESC LIMIT 50').fetchall()[::-1]
 
 
 def get_unread_notifications_count(user_id):
-    conn = get_db()
-    result = conn.execute('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0', (user_id,)).fetchone()
-    return result['count'] if result else 0
+    r = get_db().execute('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0', (user_id,)).fetchone()
+    return r['c'] if r else 0
 
 
 def get_unread_messages_count(user_id):
-    conn = get_db()
-    result = conn.execute('''
-        SELECT COUNT(*) as count FROM messages m
-        JOIN conversations c ON m.conversation_id = c.id
-        WHERE (c.user1_id = ? OR c.user2_id = ?) AND m.sender_id != ? AND m.is_read = 0
-    ''', (user_id, user_id, user_id)).fetchone()
-    return result['count'] if result else 0
+    r = get_db().execute('SELECT COUNT(*) as c FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE (c.user1_id = ? OR c.user2_id = ?) AND m.sender_id != ? AND m.is_read = 0', (user_id, user_id, user_id)).fetchone()
+    return r['c'] if r else 0
 
 
 def get_pending_reports_count():
-    conn = get_db()
-    result = conn.execute(
-        'SELECT COUNT(*) as count FROM reports WHERE status = "pending"'
-    ).fetchone()
-    return result['count'] if result else 0
+    r = get_db().execute('SELECT COUNT(*) as c FROM reports WHERE status = "pending"').fetchone()
+    return r['c'] if r else 0
 
 
 def enrich_posts(posts, user, conn):
-    posts_with_reactions = []
+    result = []
     for post in posts:
-        post_dict = dict(post)
-        reactions = conn.execute('''
-            SELECT reaction_type, COUNT(*) as count
-            FROM reactions WHERE post_id = ?
-            GROUP BY reaction_type
-        ''', (post['id'],)).fetchall()
-        post_dict['reactions'] = {r['reaction_type']: r['count'] for r in reactions}
-
+        p = dict(post)
+        reactions = conn.execute('SELECT reaction_type, COUNT(*) as count FROM reactions WHERE post_id = ? GROUP BY reaction_type', (post['id'],)).fetchall()
+        p['reactions'] = {r['reaction_type']: r['count'] for r in reactions}
         if user:
-            user_reaction = conn.execute(
-                'SELECT reaction_type FROM reactions WHERE user_id = ? AND post_id = ?',
-                (user['id'], post['id'])
-            ).fetchone()
-            post_dict['user_reaction'] = user_reaction['reaction_type'] if user_reaction else None
-
+            ur = conn.execute('SELECT reaction_type FROM reactions WHERE user_id = ? AND post_id = ?', (user['id'], post['id'])).fetchone()
+            p['user_reaction'] = ur['reaction_type'] if ur else None
         files = conn.execute('SELECT * FROM post_files WHERE post_id = ?', (post['id'],)).fetchall()
-        post_dict['files'] = [dict(f) for f in files]
+        p['files'] = [dict(f) for f in files]
+        result.append(p)
+    return result
 
-        posts_with_reactions.append(post_dict)
-    return posts_with_reactions
+
+def record_view(post_id, user_id):
+    conn = get_db()
+    try:
+        conn.execute('INSERT OR IGNORE INTO post_views (post_id, user_id) VALUES (?, ?)', (post_id, user_id))
+        conn.execute('UPDATE posts SET view_count = (SELECT COUNT(*) FROM post_views WHERE post_id = ?) WHERE id = ?', (post_id, post_id))
+        conn.commit()
+    except:
+        pass
 
 
 @app.context_processor
@@ -397,13 +328,28 @@ def inject_globals():
     notif_count = get_unread_notifications_count(user['id']) if user else 0
     msg_count = get_unread_messages_count(user['id']) if user else 0
     pending_reports = get_pending_reports_count() if user and user['role'] in ['admin', 'moderator'] else 0
+    theme = 'dark'
+    theme_vars = {}
+    if user:
+        try:
+            theme = user['theme'] or 'dark'
+        except (IndexError, KeyError):
+            theme = 'dark'
+        if theme == 'custom':
+            try:
+                theme_vars = {
+                    'custom_bg': user['custom_bg'] or '#0d1117',
+                    'custom_secondary': user['custom_secondary'] or '#161b22',
+                    'custom_accent': user['custom_accent'] or '#7D71D8',
+                    'custom_text': user['custom_text'] or '#f0f6fc',
+                }
+            except (IndexError, KeyError):
+                theme = 'dark'
     return {
-        'current_user': user,
-        'notification_count': notif_count,
-        'message_count': msg_count,
-        'pending_reports_count': pending_reports,
-        'REACTION_TYPES': REACTION_TYPES,
-        'REPORT_CATEGORIES': REPORT_CATEGORIES,
+        'current_user': user, 'notification_count': notif_count,
+        'message_count': msg_count, 'pending_reports_count': pending_reports,
+        'REACTION_TYPES': REACTION_TYPES, 'REPORT_CATEGORIES': REPORT_CATEGORIES,
+        'current_theme': theme, 'theme_vars': theme_vars,
     }
 
 
@@ -412,173 +358,153 @@ def index():
     user = get_current_user()
     current_tab = request.args.get('tab', 'all')
     search_query = request.args.get('q', '').strip()
-
-    posts = []
+    sort_by = request.args.get('sort', 'new')
+    conn = get_db()
     stories = []
     chat_messages = []
-
-    conn = get_db()
-
     if user:
         chat_messages = get_chat_messages()
-        stories = conn.execute('''
-            SELECT p.*, u.username, u.avatar
-            FROM posts p
-            JOIN users u ON p.user_id = u.id
-            WHERE p.is_story = 1 AND p.story_expires_at > datetime('now')
-            ORDER BY p.created_at DESC
-        ''').fetchall()
-
-    query = '''
-        SELECT p.*, u.username, u.avatar,
-               c.name as channel_name, c.avatar as channel_avatar,
-               (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
-        FROM posts p
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN channels c ON p.channel_id = c.id
-        WHERE p.is_story = 0
-    '''
+        stories = conn.execute('SELECT p.*, u.username, u.avatar FROM posts p JOIN users u ON p.user_id = u.id WHERE p.is_story = 1 AND p.story_expires_at > datetime("now") ORDER BY p.created_at DESC').fetchall()
+    q = 'SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id WHERE p.is_story = 0'
     params = []
-
     if search_query:
-        query += ' AND (p.title LIKE ? OR p.content LIKE ?)'
+        q += ' AND (p.title LIKE ? OR p.content LIKE ?)'
         params.extend([f'%{search_query}%', f'%{search_query}%'])
-    elif current_tab != 'all':
-        query += ' AND p.post_type = ?'
+    if current_tab not in ('all', 'popular', 'week', 'month'):
+        q += ' AND p.post_type = ?'
         params.append(current_tab)
+    if sort_by == 'popular' or current_tab == 'popular':
+        q += ' ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50'
+    elif current_tab == 'week':
+        q += " AND p.created_at > datetime('now', '-7 days') ORDER BY p.view_count DESC LIMIT 50"
+    elif current_tab == 'month':
+        q += " AND p.created_at > datetime('now', '-30 days') ORDER BY p.view_count DESC LIMIT 50"
+    elif sort_by == 'views':
+        q += ' ORDER BY p.view_count DESC LIMIT 50'
+    else:
+        q += ' ORDER BY p.created_at DESC LIMIT 50'
+    posts = conn.execute(q, params).fetchall()
+    posts_data = enrich_posts(posts, user, conn)
+    if user:
+        for p in posts_data:
+            record_view(p['id'], user['id'])
+    return render_template('index.html', posts=posts_data, stories=stories, current_tab=current_tab, chat_messages=chat_messages, search_query=search_query, sort_by=sort_by)
 
-    query += ' ORDER BY p.created_at DESC LIMIT 50'
-    posts = conn.execute(query, params).fetchall()
 
-    posts_with_reactions = enrich_posts(posts, user, conn)
+@app.route('/post/<int:post_id>')
+def post_view(post_id):
+    conn = get_db()
+    post = conn.execute('SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id WHERE p.id = ? AND p.is_story = 0', (post_id,)).fetchone()
+    if not post:
+        abort(404)
+    user = get_current_user()
+    post_data = enrich_posts([post], user, conn)[0]
+    if user:
+        record_view(post_id, user['id'])
+    chat_messages = get_chat_messages() if user else []
+    return render_template('post_view.html', post=post_data, chat_messages=chat_messages)
 
-    return render_template(
-        'index.html',
-        posts=posts_with_reactions,
-        stories=stories,
-        current_tab=current_tab,
-        chat_messages=chat_messages,
-        search_query=search_query
-    )
+
+@app.route('/story/<int:story_id>')
+def story_view(story_id):
+    conn = get_db()
+    story = conn.execute('SELECT p.*, u.username, u.avatar FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = ? AND p.is_story = 1', (story_id,)).fetchone()
+    if not story:
+        abort(404)
+    user = get_current_user()
+    chat_messages = get_chat_messages() if user else []
+    return render_template('story_view.html', story=story, chat_messages=chat_messages)
 
 
 @app.route('/search/users')
 def search_users():
     q = request.args.get('q', '').strip()
     conn = get_db()
-    users = []
-    if q:
-        users = conn.execute(
-            'SELECT id, username, avatar, bio FROM users WHERE username LIKE ? LIMIT 20',
-            (f'%{q}%',)
-        ).fetchall()
+    users = conn.execute('SELECT id, username, avatar, bio FROM users WHERE username LIKE ? LIMIT 20', (f'%{q}%',)).fetchall() if q and len(q) >= 2 else []
     user = get_current_user()
     chat_messages = get_chat_messages() if user else []
     return render_template('search_users.html', users=users, search_query=q, chat_messages=chat_messages)
 
 
+@app.route('/api/search/users')
+@login_required
+def api_search_users():
+    q = request.args.get('q', '').strip()
+    if not q or len(q) < 2:
+        return jsonify([])
+    users = get_db().execute('SELECT id, username, avatar, bio FROM users WHERE username LIKE ? LIMIT 10', (f'%{q}%',)).fetchall()
+    return jsonify([{'id': u['id'], 'username': u['username'], 'avatar': u['avatar'], 'bio': u['bio']} for u in users])
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if 'user_id' in session:
-        user = get_current_user()
-        if user:
+        if get_current_user():
             return redirect('/')
-        else:
-            session.clear()
-
+        session.clear()
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm = request.form.get('confirm_password', '')
-
         if not username or not email or not password:
             flash('Заполните все поля', 'danger')
             return render_template('register.html')
-
         if len(username) < 3:
             flash('Логин минимум 3 символа', 'danger')
             return render_template('register.html')
-
         if len(password) < 4:
             flash('Пароль минимум 4 символа', 'danger')
             return render_template('register.html')
-
         if password != confirm:
             flash('Пароли не совпадают', 'danger')
             return render_template('register.html')
-
-        if '@' not in email:
-            flash('Некорректный email', 'danger')
-            return render_template('register.html')
-
         try:
-            conn = get_db()
-            conn.execute(
-                'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                (username, email, password)
-            )
-            conn.commit()
-            flash('Регистрация успешна! Войдите в аккаунт.', 'success')
+            get_db().execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', (username, email, password))
+            get_db().commit()
+            flash('Регистрация успешна!', 'success')
             return redirect('/login')
         except sqlite3.IntegrityError:
-            flash('Пользователь с таким логином или email уже существует', 'danger')
-            return render_template('register.html')
-
+            flash('Пользователь уже существует', 'danger')
     return render_template('register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
-        user = get_current_user()
-        if user:
+        if get_current_user():
             return redirect('/')
-        else:
-            session.clear()
-
+        session.clear()
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-
         if not username or not password:
             flash('Заполните все поля', 'danger')
             return render_template('login.html')
-
-        conn = get_db()
-        user = conn.execute(
-            'SELECT * FROM users WHERE username = ? AND password = ?',
-            (username, password)
-        ).fetchone()
-
+        user = get_db().execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
         if user:
             if user['is_banned']:
                 if user['ban_until']:
                     try:
-                        ban_time = datetime.fromisoformat(user['ban_until'])
-                        if ban_time > datetime.now():
-                            flash(f'Аккаунт заблокирован до {ban_time.strftime("%d.%m.%Y %H:%M")}', 'danger')
+                        if datetime.fromisoformat(user['ban_until']) > datetime.now():
+                            flash(f'Заблокирован до {user["ban_until"][:16]}', 'danger')
                             return render_template('login.html')
                     except:
                         pass
                 else:
-                    flash('Аккаунт заблокирован навсегда', 'danger')
+                    flash('Заблокирован навсегда', 'danger')
                     return render_template('login.html')
-
             session['user_id'] = user['id']
             flash(f'Добро пожаловать, {user["username"]}!', 'success')
             return redirect('/')
-        else:
-            flash('Неверный логин или пароль', 'danger')
-            return render_template('login.html')
-
+        flash('Неверный логин или пароль', 'danger')
     return render_template('login.html')
 
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('Вы вышли из аккаунта', 'info')
+    flash('Вы вышли', 'info')
     return redirect('/')
 
 
@@ -588,55 +514,18 @@ def profile(username):
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     if not user:
         abort(404)
-
-    posts = conn.execute('''
-        SELECT p.*, u.username, u.avatar,
-               c.name as channel_name, c.avatar as channel_avatar,
-               (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
-        FROM posts p
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN channels c ON p.channel_id = c.id
-        WHERE p.user_id = ? AND p.is_story = 0
-        ORDER BY p.created_at DESC
-    ''', (user['id'],)).fetchall()
-
-    active_stories = conn.execute('''
-        SELECT * FROM posts
-        WHERE user_id = ? AND is_story = 1 AND story_expires_at > datetime('now')
-        ORDER BY created_at DESC
-    ''', (user['id'],)).fetchall()
-
-    archived_stories = conn.execute('''
-        SELECT * FROM posts
-        WHERE user_id = ? AND is_story = 1 AND story_expires_at <= datetime('now')
-        ORDER BY created_at DESC LIMIT 20
-    ''', (user['id'],)).fetchall()
-
-    channels = conn.execute('''
-        SELECT c.*, (SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count
-        FROM channels c WHERE c.creator_id = ?
-    ''', (user['id'],)).fetchall()
-
+    posts = conn.execute('SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id WHERE p.user_id = ? AND p.is_story = 0 ORDER BY p.created_at DESC', (user['id'],)).fetchall()
+    active_stories = conn.execute('SELECT * FROM posts WHERE user_id = ? AND is_story = 1 AND story_expires_at > datetime("now") ORDER BY created_at DESC', (user['id'],)).fetchall()
+    archived_stories = conn.execute('SELECT * FROM posts WHERE user_id = ? AND is_story = 1 AND story_expires_at <= datetime("now") ORDER BY created_at DESC LIMIT 20', (user['id'],)).fetchall()
+    channels = conn.execute('SELECT c.*, (SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count FROM channels c WHERE c.creator_id = ?', (user['id'],)).fetchall()
     stats = {
         'posts': conn.execute('SELECT COUNT(*) as c FROM posts WHERE user_id = ? AND is_story = 0', (user['id'],)).fetchone()['c'],
         'subscribers': conn.execute('SELECT COUNT(*) as c FROM channel_subscribers cs JOIN channels ch ON cs.channel_id = ch.id WHERE ch.creator_id = ?', (user['id'],)).fetchone()['c'],
         'channels': len(channels),
     }
-
     current_user = get_current_user()
-    posts_with_data = enrich_posts(posts, current_user, conn)
     chat_messages = get_chat_messages() if current_user else []
-
-    return render_template(
-        'profile/view.html',
-        profile_user=user,
-        posts=posts_with_data,
-        active_stories=active_stories,
-        archived_stories=archived_stories,
-        channels=channels,
-        stats=stats,
-        chat_messages=chat_messages
-    )
+    return render_template('profile/view.html', profile_user=user, posts=enrich_posts(posts, current_user, conn), active_stories=active_stories, archived_stories=archived_stories, channels=channels, stats=stats, chat_messages=chat_messages)
 
 
 @app.route('/profile/settings', methods=['GET', 'POST'])
@@ -644,66 +533,49 @@ def profile(username):
 def profile_settings():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         action = request.form.get('action')
-
         if action == 'update_profile':
             bio = request.form.get('bio', '')
+            updates, params = ['bio = ?'], [bio]
             avatar = request.files.get('avatar')
             banner = request.files.get('banner')
-
-            updates = ['bio = ?']
-            params = [bio]
-
-            if avatar and avatar.filename:
-                if allowed_file(avatar.filename, 'photo'):
-                    avatar_path = save_file(avatar, 'avatar')
-                    updates.append('avatar = ?')
-                    params.append(avatar_path)
-
-            if banner and banner.filename:
-                if allowed_file(banner.filename, 'photo'):
-                    banner_path = save_file(banner, 'banner')
-                    updates.append('banner = ?')
-                    params.append(banner_path)
-
+            if avatar and avatar.filename and allowed_file(avatar.filename, 'photo'):
+                updates.append('avatar = ?')
+                params.append(save_file(avatar, 'avatar'))
+            if banner and banner.filename and allowed_file(banner.filename, 'photo'):
+                updates.append('banner = ?')
+                params.append(save_file(banner, 'banner'))
             params.append(user['id'])
             conn.execute(f'UPDATE users SET {", ".join(updates)} WHERE id = ?', params)
             conn.commit()
             flash('Профиль обновлён', 'success')
-
         elif action == 'change_password':
-            current = request.form.get('current_password', '')
-            new_pass = request.form.get('new_password', '')
-            confirm = request.form.get('confirm_password', '')
-
-            if current != user['password']:
-                flash('Неверный текущий пароль', 'danger')
-            elif len(new_pass) < 4:
-                flash('Новый пароль минимум 4 символа', 'danger')
-            elif new_pass != confirm:
+            if request.form.get('current_password') != user['password']:
+                flash('Неверный пароль', 'danger')
+            elif len(request.form.get('new_password', '')) < 4:
+                flash('Минимум 4 символа', 'danger')
+            elif request.form.get('new_password') != request.form.get('confirm_password'):
                 flash('Пароли не совпадают', 'danger')
             else:
-                conn.execute('UPDATE users SET password = ? WHERE id = ?', (new_pass, user['id']))
+                conn.execute('UPDATE users SET password = ? WHERE id = ?', (request.form['new_password'], user['id']))
                 conn.commit()
                 flash('Пароль изменён', 'success')
-
+        elif action == 'change_theme':
+            conn.execute('UPDATE users SET theme=?, custom_bg=?, custom_secondary=?, custom_accent=?, custom_text=? WHERE id=?',
+                (request.form.get('theme', 'dark'), request.form.get('custom_bg', '#0d1117'), request.form.get('custom_secondary', '#161b22'), request.form.get('custom_accent', '#7D71D8'), request.form.get('custom_text', '#f0f6fc'), user['id']))
+            conn.commit()
+            flash('Тема обновлена', 'success')
         elif action == 'delete_account':
-            password = request.form.get('delete_password', '')
-            if password != user['password']:
+            if request.form.get('delete_password') != user['password']:
                 flash('Неверный пароль', 'danger')
             else:
                 conn.execute('DELETE FROM users WHERE id = ?', (user['id'],))
                 conn.commit()
                 session.clear()
-                flash('Аккаунт удалён', 'info')
                 return redirect('/')
-
         return redirect('/profile/settings')
-
-    chat_messages = get_chat_messages()
-    return render_template('profile/settings.html', chat_messages=chat_messages)
+    return render_template('profile/settings.html', chat_messages=get_chat_messages())
 
 
 @app.route('/create/post', methods=['GET', 'POST'])
@@ -711,33 +583,38 @@ def profile_settings():
 def create_post():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         channel_id = request.form.get('channel_id')
-
         if not content:
-            flash('Введите текст поста', 'danger')
+            flash('Введите текст', 'danger')
             return redirect('/create/post')
-
-        cursor = conn.execute(
-            'INSERT INTO posts (user_id, channel_id, post_type, title, content) VALUES (?, ?, ?, ?, ?)',
-            (user['id'], channel_id if channel_id else None, 'text', title if title else None, content)
-        )
+        photos = request.files.getlist('photos')
+        video = request.files.get('video')
+        valid_photos = [p for p in photos if p and p.filename and allowed_file(p.filename, 'photo')]
+        valid_video = video if video and video.filename and allowed_file(video.filename, 'video') else None
+        file_path = None
+        if valid_video:
+            file_path = save_file(valid_video, 'video')
+        elif valid_photos:
+            file_path = save_file(valid_photos[0], 'photo')
+        cursor = conn.execute('INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
+            (user['id'], channel_id or None, 'text', title or None, content, file_path))
         post_id = cursor.lastrowid
+        for i, photo in enumerate(valid_photos):
+            path = file_path if i == 0 and not valid_video else save_file(photo, 'photo')
+            conn.execute('INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)', (post_id, path, 'photo'))
+        if valid_video:
+            conn.execute('INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)', (post_id, file_path, 'video'))
         conn.commit()
-
-        hashtags = extract_hashtags(content)
-        if hashtags:
-            save_hashtags(post_id, hashtags)
-
+        tags = extract_hashtags(content)
+        if tags:
+            save_hashtags(post_id, tags)
         flash('Пост опубликован!', 'success')
-        return redirect('/')
-
+        return redirect(f'/post/{post_id}')
     channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
-    chat_messages = get_chat_messages()
-    return render_template('create/post.html', channels=channels, chat_messages=chat_messages)
+    return render_template('create/post.html', channels=channels, chat_messages=get_chat_messages())
 
 
 @app.route('/create/video', methods=['GET', 'POST'])
@@ -745,40 +622,24 @@ def create_post():
 def create_video():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         channel_id = request.form.get('channel_id')
         video = request.files.get('video')
-
-        if not video or not video.filename:
+        if not video or not video.filename or not allowed_file(video.filename, 'video'):
             flash('Выберите видео', 'danger')
             return redirect('/create/video')
-
-        if not allowed_file(video.filename, 'video'):
-            flash('Неподдерживаемый формат видео', 'danger')
-            return redirect('/create/video')
-
-        video_path = save_file(video, 'video')
-
-        cursor = conn.execute(
-            'INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
-            (user['id'], channel_id if channel_id else None, 'video', title if title else None, content, video_path)
-        )
-        post_id = cursor.lastrowid
+        path = save_file(video, 'video')
+        cursor = conn.execute('INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
+            (user['id'], channel_id or None, 'video', title or None, content, path))
         conn.commit()
-
-        hashtags = extract_hashtags(content)
-        if hashtags:
-            save_hashtags(post_id, hashtags)
-
+        tags = extract_hashtags(content)
+        if tags:
+            save_hashtags(cursor.lastrowid, tags)
         flash('Видео опубликовано!', 'success')
-        return redirect('/?tab=video')
-
-    channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
-    chat_messages = get_chat_messages()
-    return render_template('create/video.html', channels=channels, chat_messages=chat_messages)
+        return redirect(f'/post/{cursor.lastrowid}')
+    return render_template('create/video.html', channels=conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall(), chat_messages=get_chat_messages())
 
 
 @app.route('/create/photo', methods=['GET', 'POST'])
@@ -786,53 +647,29 @@ def create_video():
 def create_photo():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         channel_id = request.form.get('channel_id')
         photos = request.files.getlist('photos')
-
-        valid_photos = [p for p in photos if p and p.filename and allowed_file(p.filename, 'photo')]
-
-        if not valid_photos:
-            flash('Выберите хотя бы одно фото', 'danger')
+        valid = [p for p in photos if p and p.filename and allowed_file(p.filename, 'photo')]
+        if not valid:
+            flash('Выберите фото', 'danger')
             return redirect('/create/photo')
-
-        if len(valid_photos) > MAX_PHOTOS_PER_POST:
-            flash(f'Максимум {MAX_PHOTOS_PER_POST} фото', 'danger')
-            return redirect('/create/photo')
-
-        first_photo_path = save_file(valid_photos[0], 'photo')
-
-        cursor = conn.execute(
-            'INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
-            (user['id'], channel_id if channel_id else None, 'photo', title if title else None, content, first_photo_path)
-        )
+        first = save_file(valid[0], 'photo')
+        cursor = conn.execute('INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
+            (user['id'], channel_id or None, 'photo', title or None, content, first))
         post_id = cursor.lastrowid
-
-        for i, photo in enumerate(valid_photos):
-            if i == 0:
-                photo_path = first_photo_path
-            else:
-                photo_path = save_file(photo, 'photo')
-            conn.execute(
-                'INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)',
-                (post_id, photo_path, 'photo')
-            )
-
+        for i, photo in enumerate(valid):
+            path = first if i == 0 else save_file(photo, 'photo')
+            conn.execute('INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)', (post_id, path, 'photo'))
         conn.commit()
-
-        hashtags = extract_hashtags(content)
-        if hashtags:
-            save_hashtags(post_id, hashtags)
-
+        tags = extract_hashtags(content)
+        if tags:
+            save_hashtags(post_id, tags)
         flash('Фото опубликовано!', 'success')
-        return redirect(f'/?tab=photo#post-{post_id}')
-
-    channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
-    chat_messages = get_chat_messages()
-    return render_template('create/photo.html', channels=channels, chat_messages=chat_messages)
+        return redirect(f'/post/{post_id}')
+    return render_template('create/photo.html', channels=conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall(), chat_messages=get_chat_messages())
 
 
 @app.route('/create/audio', methods=['GET', 'POST'])
@@ -840,40 +677,24 @@ def create_photo():
 def create_audio():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         channel_id = request.form.get('channel_id')
         audio = request.files.get('audio')
-
-        if not audio or not audio.filename:
+        if not audio or not audio.filename or not allowed_file(audio.filename, 'audio'):
             flash('Выберите аудио', 'danger')
             return redirect('/create/audio')
-
-        if not allowed_file(audio.filename, 'audio'):
-            flash('Неподдерживаемый формат аудио', 'danger')
-            return redirect('/create/audio')
-
-        audio_path = save_file(audio, 'audio')
-
-        cursor = conn.execute(
-            'INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
-            (user['id'], channel_id if channel_id else None, 'audio', title if title else None, content, audio_path)
-        )
-        post_id = cursor.lastrowid
+        path = save_file(audio, 'audio')
+        cursor = conn.execute('INSERT INTO posts (user_id, channel_id, post_type, title, content, file_path) VALUES (?, ?, ?, ?, ?, ?)',
+            (user['id'], channel_id or None, 'audio', title or None, content, path))
         conn.commit()
-
-        hashtags = extract_hashtags(content)
-        if hashtags:
-            save_hashtags(post_id, hashtags)
-
+        tags = extract_hashtags(content)
+        if tags:
+            save_hashtags(cursor.lastrowid, tags)
         flash('Аудио опубликовано!', 'success')
-        return redirect('/?tab=audio')
-
-    channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
-    chat_messages = get_chat_messages()
-    return render_template('create/audio.html', channels=channels, chat_messages=chat_messages)
+        return redirect(f'/post/{cursor.lastrowid}')
+    return render_template('create/audio.html', channels=conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall(), chat_messages=get_chat_messages())
 
 
 @app.route('/create/article', methods=['GET', 'POST'])
@@ -881,33 +702,22 @@ def create_audio():
 def create_article():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         channel_id = request.form.get('channel_id')
-
         if not title or not content:
-            flash('Заполните заголовок и содержание', 'danger')
+            flash('Заполните заголовок и текст', 'danger')
             return redirect('/create/article')
-
-        cursor = conn.execute(
-            'INSERT INTO posts (user_id, channel_id, post_type, title, content) VALUES (?, ?, ?, ?, ?)',
-            (user['id'], channel_id if channel_id else None, 'article', title, content)
-        )
-        post_id = cursor.lastrowid
+        cursor = conn.execute('INSERT INTO posts (user_id, channel_id, post_type, title, content) VALUES (?, ?, ?, ?, ?)',
+            (user['id'], channel_id or None, 'article', title, content))
         conn.commit()
-
-        hashtags = extract_hashtags(content)
-        if hashtags:
-            save_hashtags(post_id, hashtags)
-
+        tags = extract_hashtags(content)
+        if tags:
+            save_hashtags(cursor.lastrowid, tags)
         flash('Статья опубликована!', 'success')
-        return redirect('/?tab=article')
-
-    channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
-    chat_messages = get_chat_messages()
-    return render_template('create/article.html', channels=channels, chat_messages=chat_messages)
+        return redirect(f'/post/{cursor.lastrowid}')
+    return render_template('create/article.html', channels=conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall(), chat_messages=get_chat_messages())
 
 
 @app.route('/create/story', methods=['GET', 'POST'])
@@ -915,30 +725,22 @@ def create_article():
 def create_story():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         content = request.form.get('content', '').strip()
+        duration = max(1, min(48, int(request.form.get('duration', 24))))
         media = request.files.get('media')
-
         file_path = None
         if media and media.filename:
             ext = media.filename.rsplit('.', 1)[1].lower()
             if ext in ALLOWED_EXTENSIONS['photo'] or ext in ALLOWED_EXTENSIONS['video']:
                 file_path = save_file(media, 'story')
-
-        expires_at = (datetime.now() + timedelta(hours=STORY_LIFETIME_HOURS)).isoformat()
-
-        conn.execute(
-            'INSERT INTO posts (user_id, post_type, content, file_path, is_story, story_expires_at) VALUES (?, ?, ?, ?, 1, ?)',
-            (user['id'], 'story', content, file_path, expires_at)
-        )
+        expires = (datetime.now() + timedelta(hours=duration)).isoformat()
+        cursor = conn.execute('INSERT INTO posts (user_id, post_type, content, file_path, is_story, story_expires_at) VALUES (?, ?, ?, ?, 1, ?)',
+            (user['id'], 'story', content, file_path, expires))
         conn.commit()
-
         flash('История опубликована!', 'success')
-        return redirect('/')
-
-    chat_messages = get_chat_messages()
-    return render_template('create/story.html', chat_messages=chat_messages)
+        return redirect(f'/story/{cursor.lastrowid}')
+    return render_template('create/story.html', chat_messages=get_chat_messages())
 
 
 @app.route('/channel/create', methods=['GET', 'POST'])
@@ -946,40 +748,24 @@ def create_story():
 def create_channel():
     user = get_current_user()
     conn = get_db()
-
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
+        if not name:
+            flash('Введите название', 'danger')
+            return redirect('/channel/create')
         avatar = request.files.get('avatar')
         banner = request.files.get('banner')
-
-        if not name:
-            flash('Введите название канала', 'danger')
-            return redirect('/channel/create')
-
-        avatar_path = None
-        banner_path = None
-
-        if avatar and avatar.filename and allowed_file(avatar.filename, 'photo'):
-            avatar_path = save_file(avatar, 'avatar')
-
-        if banner and banner.filename and allowed_file(banner.filename, 'photo'):
-            banner_path = save_file(banner, 'banner')
-
+        ap = save_file(avatar, 'avatar') if avatar and avatar.filename and allowed_file(avatar.filename, 'photo') else None
+        bp = save_file(banner, 'banner') if banner and banner.filename and allowed_file(banner.filename, 'photo') else None
         try:
-            cursor = conn.execute(
-                'INSERT INTO channels (name, description, avatar, banner, creator_id) VALUES (?, ?, ?, ?, ?)',
-                (name, description, avatar_path, banner_path, user['id'])
-            )
-            channel_id = cursor.lastrowid
+            cursor = conn.execute('INSERT INTO channels (name, description, avatar, banner, creator_id) VALUES (?, ?, ?, ?, ?)',
+                (name, request.form.get('description', '').strip(), ap, bp, user['id']))
             conn.commit()
             flash('Канал создан!', 'success')
-            return redirect(f'/channel/{channel_id}')
+            return redirect(f'/channel/{cursor.lastrowid}')
         except sqlite3.IntegrityError:
-            flash('Канал с таким названием уже существует', 'danger')
-
-    chat_messages = get_chat_messages()
-    return render_template('channel/create.html', chat_messages=chat_messages)
+            flash('Канал уже существует', 'danger')
+    return render_template('channel/create.html', chat_messages=get_chat_messages())
 
 
 @app.route('/channel/<int:channel_id>/edit', methods=['GET', 'POST'])
@@ -987,108 +773,51 @@ def create_channel():
 def edit_channel(channel_id):
     user = get_current_user()
     conn = get_db()
-
     channel = conn.execute('SELECT * FROM channels WHERE id = ?', (channel_id,)).fetchone()
     if not channel:
         abort(404)
-
     if channel['creator_id'] != user['id'] and user['role'] != 'admin':
         flash('Недостаточно прав', 'danger')
         return redirect(f'/channel/{channel_id}')
-
     if request.method == 'POST':
-        description = request.form.get('description', '').strip()
+        updates, params = ['description = ?'], [request.form.get('description', '').strip()]
         avatar = request.files.get('avatar')
         banner = request.files.get('banner')
-
-        updates = ['description = ?']
-        params = [description]
-
         if avatar and avatar.filename and allowed_file(avatar.filename, 'photo'):
-            avatar_path = save_file(avatar, 'avatar')
             updates.append('avatar = ?')
-            params.append(avatar_path)
-
+            params.append(save_file(avatar, 'avatar'))
         if banner and banner.filename and allowed_file(banner.filename, 'photo'):
-            banner_path = save_file(banner, 'banner')
             updates.append('banner = ?')
-            params.append(banner_path)
-
+            params.append(save_file(banner, 'banner'))
         params.append(channel_id)
         conn.execute(f'UPDATE channels SET {", ".join(updates)} WHERE id = ?', params)
         conn.commit()
         flash('Канал обновлён', 'success')
         return redirect(f'/channel/{channel_id}')
-
-    chat_messages = get_chat_messages()
-    return render_template('channel/edit.html', channel=channel, chat_messages=chat_messages)
+    return render_template('channel/edit.html', channel=channel, chat_messages=get_chat_messages())
 
 
 @app.route('/channels')
 def channels_list():
-    conn = get_db()
-    channels = conn.execute('''
-        SELECT c.*, u.username as creator_name,
-               (SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count
-        FROM channels c
-        JOIN users u ON c.creator_id = u.id
-        ORDER BY sub_count DESC
-    ''').fetchall()
-
+    channels = get_db().execute('SELECT c.*, u.username as creator_name, (SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count FROM channels c JOIN users u ON c.creator_id = u.id ORDER BY sub_count DESC').fetchall()
     user = get_current_user()
-    chat_messages = get_chat_messages() if user else []
-    return render_template('channel/list.html', channels=channels, chat_messages=chat_messages)
+    return render_template('channel/list.html', channels=channels, chat_messages=get_chat_messages() if user else [])
 
 
 @app.route('/channel/<int:channel_id>')
 def channel_view(channel_id):
     conn = get_db()
-    channel = conn.execute('''
-        SELECT c.*, u.username as creator_name
-        FROM channels c
-        JOIN users u ON c.creator_id = u.id
-        WHERE c.id = ?
-    ''', (channel_id,)).fetchone()
-
+    channel = conn.execute('SELECT c.*, u.username as creator_name FROM channels c JOIN users u ON c.creator_id = u.id WHERE c.id = ?', (channel_id,)).fetchone()
     if not channel:
         abort(404)
-
     sub_count = conn.execute('SELECT COUNT(*) as c FROM channel_subscribers WHERE channel_id = ?', (channel_id,)).fetchone()['c']
-
-    posts = conn.execute('''
-        SELECT p.*, u.username, u.avatar,
-               c.name as channel_name, c.avatar as channel_avatar,
-               (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
-        FROM posts p
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN channels c ON p.channel_id = c.id
-        WHERE p.channel_id = ?
-        ORDER BY p.created_at DESC
-    ''', (channel_id,)).fetchall()
-
+    posts = conn.execute('SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id WHERE p.channel_id = ? ORDER BY p.created_at DESC', (channel_id,)).fetchall()
     user = get_current_user()
-    posts_with_data = enrich_posts(posts, user, conn)
-
+    is_owner = user and channel['creator_id'] == user['id']
     is_subscribed = False
-    is_owner = False
-    if user:
-        is_owner = channel['creator_id'] == user['id']
-        if not is_owner:
-            is_subscribed = conn.execute(
-                'SELECT 1 FROM channel_subscribers WHERE user_id = ? AND channel_id = ?',
-                (user['id'], channel_id)
-            ).fetchone() is not None
-
-    chat_messages = get_chat_messages() if user else []
-    return render_template(
-        'channel/view.html',
-        channel=channel,
-        sub_count=sub_count,
-        posts=posts_with_data,
-        is_subscribed=is_subscribed,
-        is_owner=is_owner,
-        chat_messages=chat_messages
-    )
+    if user and not is_owner:
+        is_subscribed = conn.execute('SELECT 1 FROM channel_subscribers WHERE user_id = ? AND channel_id = ?', (user['id'], channel_id)).fetchone() is not None
+    return render_template('channel/view.html', channel=channel, sub_count=sub_count, posts=enrich_posts(posts, user, conn), is_subscribed=is_subscribed, is_owner=is_owner, chat_messages=get_chat_messages() if user else [])
 
 
 @app.route('/channel/<int:channel_id>/subscribe', methods=['POST'])
@@ -1096,34 +825,19 @@ def channel_view(channel_id):
 def channel_subscribe(channel_id):
     user = get_current_user()
     conn = get_db()
-
     channel = conn.execute('SELECT * FROM channels WHERE id = ?', (channel_id,)).fetchone()
     if not channel:
         return jsonify({'error': 'not found'}), 404
-
     if channel['creator_id'] == user['id']:
-        return jsonify({'error': 'owner cannot subscribe'}), 403
-
-    existing = conn.execute(
-        'SELECT 1 FROM channel_subscribers WHERE user_id = ? AND channel_id = ?',
-        (user['id'], channel_id)
-    ).fetchone()
-
+        return jsonify({'error': 'owner'}), 403
+    existing = conn.execute('SELECT 1 FROM channel_subscribers WHERE user_id = ? AND channel_id = ?', (user['id'], channel_id)).fetchone()
     if existing:
         conn.execute('DELETE FROM channel_subscribers WHERE user_id = ? AND channel_id = ?', (user['id'], channel_id))
         action = 'unsubscribed'
     else:
         conn.execute('INSERT INTO channel_subscribers (user_id, channel_id) VALUES (?, ?)', (user['id'], channel_id))
         action = 'subscribed'
-
-        if channel['creator_id'] != user['id']:
-            add_notification(
-                channel['creator_id'],
-                'subscribe',
-                f'{user["username"]} подписался на канал "{channel["name"]}"',
-                f'/channel/{channel_id}'
-            )
-
+        add_notification(channel['creator_id'], 'subscribe', f'{user["username"]} подписался на "{channel["name"]}"', f'/channel/{channel_id}')
     conn.commit()
     return jsonify({'status': 'ok', 'action': action})
 
@@ -1133,54 +847,28 @@ def channel_subscribe(channel_id):
 def react_to_post(post_id):
     user = get_current_user()
     data = request.get_json()
-    reaction_type = data.get('reaction_type') if data else None
-
-    if reaction_type not in REACTION_TYPES:
-        return jsonify({'error': 'Invalid reaction'}), 400
-
+    rt = data.get('reaction_type') if data else None
+    if rt not in REACTION_TYPES:
+        return jsonify({'error': 'invalid'}), 400
     conn = get_db()
-
-    existing = conn.execute(
-        'SELECT reaction_type FROM reactions WHERE user_id = ? AND post_id = ?',
-        (user['id'], post_id)
-    ).fetchone()
-
+    existing = conn.execute('SELECT reaction_type FROM reactions WHERE user_id = ? AND post_id = ?', (user['id'], post_id)).fetchone()
     if existing:
-        if existing['reaction_type'] == reaction_type:
+        if existing['reaction_type'] == rt:
             conn.execute('DELETE FROM reactions WHERE user_id = ? AND post_id = ?', (user['id'], post_id))
             action = 'removed'
         else:
-            conn.execute(
-                'UPDATE reactions SET reaction_type = ? WHERE user_id = ? AND post_id = ?',
-                (reaction_type, user['id'], post_id)
-            )
+            conn.execute('UPDATE reactions SET reaction_type = ? WHERE user_id = ? AND post_id = ?', (rt, user['id'], post_id))
             action = 'changed'
     else:
-        conn.execute(
-            'INSERT INTO reactions (user_id, post_id, reaction_type) VALUES (?, ?, ?)',
-            (user['id'], post_id, reaction_type)
-        )
+        conn.execute('INSERT INTO reactions (user_id, post_id, reaction_type) VALUES (?, ?, ?)', (user['id'], post_id, rt))
         action = 'added'
-
     conn.commit()
-
     if action == 'added':
         post = conn.execute('SELECT user_id FROM posts WHERE id = ?', (post_id,)).fetchone()
         if post and post['user_id'] != user['id']:
-            add_notification(
-                post['user_id'],
-                'reaction',
-                f'{user["username"]} оценил ваш пост',
-                f'/#post-{post_id}'
-            )
-
-    reactions = conn.execute('''
-        SELECT reaction_type, COUNT(*) as count
-        FROM reactions WHERE post_id = ? GROUP BY reaction_type
-    ''', (post_id,)).fetchall()
-    reaction_counts = {r['reaction_type']: r['count'] for r in reactions}
-
-    return jsonify({'status': 'ok', 'action': action, 'reactions': reaction_counts})
+            add_notification(post['user_id'], 'reaction', f'{user["username"]} оценил ваш пост', f'/post/{post_id}')
+    reactions = conn.execute('SELECT reaction_type, COUNT(*) as count FROM reactions WHERE post_id = ? GROUP BY reaction_type', (post_id,)).fetchall()
+    return jsonify({'status': 'ok', 'action': action, 'reactions': {r['reaction_type']: r['count'] for r in reactions}})
 
 
 @app.route('/api/comment/<int:post_id>', methods=['POST'])
@@ -1189,93 +877,71 @@ def add_comment(post_id):
     user = get_current_user()
     content = request.form.get('content', '').strip()
     parent_id = request.form.get('parent_id')
-
     if not content:
         return jsonify({'error': 'empty'}), 400
-
+    if parent_id:
+        parent = get_db().execute('SELECT user_id FROM comments WHERE id = ?', (parent_id,)).fetchone()
+        if parent and parent['user_id'] == user['id']:
+            return jsonify({'error': 'cannot reply to own'}), 400
     conn = get_db()
-    cursor = conn.execute(
-        'INSERT INTO comments (post_id, user_id, parent_id, content) VALUES (?, ?, ?, ?)',
-        (post_id, user['id'], parent_id if parent_id else None, content)
-    )
-    comment_id = cursor.lastrowid
+    cursor = conn.execute('INSERT INTO comments (post_id, user_id, parent_id, content) VALUES (?, ?, ?, ?)',
+        (post_id, user['id'], parent_id or None, content))
+    cid = cursor.lastrowid
     conn.commit()
-
     post = conn.execute('SELECT user_id FROM posts WHERE id = ?', (post_id,)).fetchone()
     if post and post['user_id'] != user['id']:
-        add_notification(
-            post['user_id'],
-            'comment',
-            f'{user["username"]} прокомментировал ваш пост',
-            f'/#post-{post_id}'
-        )
+        add_notification(post['user_id'], 'comment', f'{user["username"]} прокомментировал ваш пост', f'/post/{post_id}')
+    c = conn.execute('SELECT c.*, u.username, u.avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?', (cid,)).fetchone()
+    return jsonify({'status': 'ok', 'comment': {'id': c['id'], 'content': c['content'], 'username': c['username'], 'avatar': c['avatar'], 'created_at': c['created_at'], 'parent_id': c['parent_id'], 'user_id': c['user_id'], 'replies': []}})
 
-    comment = conn.execute('''
-        SELECT c.*, u.username, u.avatar
-        FROM comments c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.id = ?
-    ''', (comment_id,)).fetchone()
 
-    return jsonify({
-        'status': 'ok',
-        'comment': {
-            'id': comment['id'],
-            'content': comment['content'],
-            'username': comment['username'],
-            'avatar': comment['avatar'],
-            'created_at': comment['created_at'],
-            'parent_id': comment['parent_id'],
-            'replies': []
-        }
-    })
+@app.route('/api/comment/<int:comment_id>/edit', methods=['POST'])
+@login_required
+def edit_comment(comment_id):
+    user = get_current_user()
+    conn = get_db()
+    comment = conn.execute('SELECT * FROM comments WHERE id = ?', (comment_id,)).fetchone()
+    if not comment:
+        return jsonify({'error': 'not found'}), 404
+    if comment['user_id'] != user['id']:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json()
+    content = data.get('content', '').strip() if data else ''
+    if not content:
+        return jsonify({'error': 'empty'}), 400
+    conn.execute('UPDATE comments SET content = ? WHERE id = ?', (content, comment_id))
+    conn.commit()
+    return jsonify({'status': 'ok', 'content': content})
 
 
 @app.route('/api/comments/<int:post_id>')
 def get_comments(post_id):
-    conn = get_db()
-    comments = conn.execute('''
-        SELECT c.*, u.username, u.avatar
-        FROM comments c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.post_id = ?
-        ORDER BY c.created_at ASC
-    ''', (post_id,)).fetchall()
-
-    def build_tree(parent_id=None):
-        result = []
-        for comment in comments:
-            if comment['parent_id'] == parent_id:
-                c = dict(comment)
-                c['replies'] = build_tree(comment['id'])
-                result.append(c)
-        return result
-
-    return jsonify(build_tree())
+    comments = get_db().execute('SELECT c.*, u.username, u.avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at ASC', (post_id,)).fetchall()
+    def build(pid=None):
+        r = []
+        for c in comments:
+            if c['parent_id'] == pid:
+                d = dict(c)
+                d['replies'] = build(c['id'])
+                r.append(d)
+        return r
+    return jsonify(build())
 
 
 @app.route('/messages')
 @login_required
 def messages_inbox():
     user = get_current_user()
-    conn = get_db()
-
-    conversations = conn.execute('''
-        SELECT c.*,
-               CASE WHEN c.user1_id = ? THEN u2.username ELSE u1.username END as other_username,
-               CASE WHEN c.user1_id = ? THEN u2.avatar ELSE u1.avatar END as other_avatar,
-               CASE WHEN c.user1_id = ? THEN u2.id ELSE u1.id END as other_id,
-               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
-               (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND sender_id != ? AND is_read = 0) as unread_count
-        FROM conversations c
-        JOIN users u1 ON c.user1_id = u1.id
-        JOIN users u2 ON c.user2_id = u2.id
-        WHERE c.user1_id = ? OR c.user2_id = ?
-        ORDER BY c.last_message_at DESC
-    ''', (user['id'], user['id'], user['id'], user['id'], user['id'], user['id'])).fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template('messages/inbox.html', conversations=conversations, chat_messages=chat_messages)
+    conversations = get_db().execute('''
+        SELECT c.*, CASE WHEN c.user1_id = ? THEN u2.username ELSE u1.username END as other_username,
+        CASE WHEN c.user1_id = ? THEN u2.avatar ELSE u1.avatar END as other_avatar,
+        CASE WHEN c.user1_id = ? THEN u2.id ELSE u1.id END as other_id,
+        (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND sender_id != ? AND is_read = 0) as unread_count
+        FROM conversations c JOIN users u1 ON c.user1_id = u1.id JOIN users u2 ON c.user2_id = u2.id
+        WHERE c.user1_id = ? OR c.user2_id = ? ORDER BY c.last_message_at DESC
+    ''', (user['id'],)*6).fetchall()
+    return render_template('messages/inbox.html', conversations=conversations, chat_messages=get_chat_messages())
 
 
 @app.route('/messages/<int:user_id>', methods=['GET', 'POST'])
@@ -1283,64 +949,40 @@ def messages_inbox():
 def messages_chat(user_id):
     user = get_current_user()
     conn = get_db()
-
-    other_user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not other_user:
+    other = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not other:
         abort(404)
-
-    user1_id, user2_id = min(user['id'], user_id), max(user['id'], user_id)
-    conversation = conn.execute(
-        'SELECT * FROM conversations WHERE user1_id = ? AND user2_id = ?',
-        (user1_id, user2_id)
-    ).fetchone()
-
+    u1, u2 = min(user['id'], user_id), max(user['id'], user_id)
+    conv = conn.execute('SELECT * FROM conversations WHERE user1_id = ? AND user2_id = ?', (u1, u2)).fetchone()
     if request.method == 'POST':
         content = request.form.get('content', '').strip()
-        if content:
-            if not conversation:
-                cursor = conn.execute(
-                    'INSERT INTO conversations (user1_id, user2_id) VALUES (?, ?)',
-                    (user1_id, user2_id)
-                )
-                conversation_id = cursor.lastrowid
+        media = request.files.get('media')
+        fp, ft = None, None
+        if media and media.filename:
+            ext = media.filename.rsplit('.', 1)[1].lower()
+            if ext in ALLOWED_EXTENSIONS.get('photo', set()):
+                fp, ft = save_file(media, 'photo'), 'photo'
+            elif ext in ALLOWED_EXTENSIONS.get('video', set()):
+                fp, ft = save_file(media, 'video'), 'video'
+            elif ext in ALLOWED_EXTENSIONS.get('audio', set()):
+                fp, ft = save_file(media, 'audio'), 'audio'
+        if content or fp:
+            if not conv:
+                cursor = conn.execute('INSERT INTO conversations (user1_id, user2_id) VALUES (?, ?)', (u1, u2))
+                cid = cursor.lastrowid
             else:
-                conversation_id = conversation['id']
-
-            conn.execute(
-                'INSERT INTO messages (conversation_id, sender_id, content) VALUES (?, ?, ?)',
-                (conversation_id, user['id'], content)
-            )
-            conn.execute(
-                'UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?',
-                (conversation_id,)
-            )
+                cid = conv['id']
+            conn.execute('INSERT INTO messages (conversation_id, sender_id, content, file_path, file_type) VALUES (?, ?, ?, ?, ?)',
+                (cid, user['id'], content or None, fp, ft))
+            conn.execute('UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?', (cid,))
             conn.commit()
-
         return redirect(f'/messages/{user_id}')
-
-    messages_list = []
-    if conversation:
-        conn.execute(
-            'UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?',
-            (conversation['id'], user['id'])
-        )
+    msgs = []
+    if conv:
+        conn.execute('UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?', (conv['id'], user['id']))
         conn.commit()
-
-        messages_list = conn.execute('''
-            SELECT m.*, u.username, u.avatar
-            FROM messages m
-            JOIN users u ON m.sender_id = u.id
-            WHERE m.conversation_id = ?
-            ORDER BY m.created_at ASC
-        ''', (conversation['id'],)).fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template(
-        'messages/chat.html',
-        other_user=other_user,
-        messages=messages_list,
-        chat_messages=chat_messages
-    )
+        msgs = conn.execute('SELECT m.*, u.username, u.avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.conversation_id = ? ORDER BY m.created_at ASC', (conv['id'],)).fetchall()
+    return render_template('messages/chat.html', other_user=other, messages=msgs, chat_messages=get_chat_messages())
 
 
 @app.route('/api/global_chat', methods=['POST'])
@@ -1348,71 +990,43 @@ def messages_chat(user_id):
 def send_global_chat():
     user = get_current_user()
     content = request.form.get('content', '').strip()
-
     if not content:
         return redirect(request.referrer or '/')
-
     conn = get_db()
-    cooldown = conn.execute('SELECT cooldown_until FROM chat_cooldowns WHERE user_id = ?', (user['id'],)).fetchone()
-
-    if cooldown and datetime.fromisoformat(cooldown['cooldown_until']) > datetime.now():
-        remaining = (datetime.fromisoformat(cooldown['cooldown_until']) - datetime.now()).seconds
-        flash(f'Подождите {remaining} секунд', 'warning')
+    cd = conn.execute('SELECT cooldown_until FROM chat_cooldowns WHERE user_id = ?', (user['id'],)).fetchone()
+    if cd and datetime.fromisoformat(cd['cooldown_until']) > datetime.now():
+        flash(f'Подождите {(datetime.fromisoformat(cd["cooldown_until"]) - datetime.now()).seconds} сек', 'warning')
         return redirect(request.referrer or '/')
-
-    recent = conn.execute('''
-        SELECT COUNT(*) as c FROM global_chat
-        WHERE user_id = ? AND created_at > datetime('now', '-5 seconds')
-    ''', (user['id'],)).fetchone()
-
+    recent = conn.execute("SELECT COUNT(*) as c FROM global_chat WHERE user_id = ? AND created_at > datetime('now', '-5 seconds')", (user['id'],)).fetchone()
     if recent['c'] >= CHAT_SPAM_MESSAGES:
-        cooldown_until = (datetime.now() + timedelta(seconds=CHAT_COOLDOWN_SECONDS)).isoformat()
-        conn.execute(
-            'INSERT OR REPLACE INTO chat_cooldowns (user_id, cooldown_until) VALUES (?, ?)',
-            (user['id'], cooldown_until)
-        )
+        cu = (datetime.now() + timedelta(seconds=CHAT_COOLDOWN_SECONDS)).isoformat()
+        conn.execute('INSERT OR REPLACE INTO chat_cooldowns (user_id, cooldown_until) VALUES (?, ?)', (user['id'], cu))
         conn.commit()
-        flash(f'Слишком много сообщений. Подождите {CHAT_COOLDOWN_SECONDS} секунд', 'warning')
+        flash(f'Подождите {CHAT_COOLDOWN_SECONDS} сек', 'warning')
         return redirect(request.referrer or '/')
-
     conn.execute('INSERT INTO global_chat (user_id, content) VALUES (?, ?)', (user['id'], content))
     conn.commit()
-
     return redirect(request.referrer or '/')
 
 
 @app.route('/api/global_chat/messages')
 def get_global_chat_messages():
-    messages = get_chat_messages()
-    return jsonify([{
-        'id': m['id'],
-        'user_id': m['user_id'],
-        'username': m['username'],
-        'avatar': m['avatar'],
-        'content': m['content'],
-        'created_at': m['created_at']
-    } for m in messages])
+    msgs = get_chat_messages()
+    return jsonify([{'id': m['id'], 'user_id': m['user_id'], 'username': m['username'], 'avatar': m['avatar'], 'content': m['content'], 'created_at': m['created_at']} for m in msgs])
 
 
 @app.route('/api/chat/cooldown')
 @login_required
 def get_chat_cooldown():
     user = get_current_user()
-    conn = get_db()
-    cooldown = conn.execute(
-        'SELECT cooldown_until FROM chat_cooldowns WHERE user_id = ?',
-        (user['id'],)
-    ).fetchone()
-
-    if cooldown:
+    cd = get_db().execute('SELECT cooldown_until FROM chat_cooldowns WHERE user_id = ?', (user['id'],)).fetchone()
+    if cd:
         try:
-            cooldown_time = datetime.fromisoformat(cooldown['cooldown_until'])
-            if cooldown_time > datetime.now():
-                remaining = (cooldown_time - datetime.now()).seconds
-                return jsonify({'cooldown': remaining})
+            ct = datetime.fromisoformat(cd['cooldown_until'])
+            if ct > datetime.now():
+                return jsonify({'cooldown': (ct - datetime.now()).seconds})
         except:
             pass
-
     return jsonify({'cooldown': 0})
 
 
@@ -1420,19 +1034,15 @@ def get_chat_cooldown():
 @login_required
 def get_notifications_count():
     user = get_current_user()
-    if user:
-        count = get_unread_notifications_count(user['id'])
-        return jsonify({'count': count})
-    return jsonify({'count': 0})
+    return jsonify({'count': get_unread_notifications_count(user['id']) if user else 0})
 
 
 @app.route('/api/notifications/read-all', methods=['POST'])
 @login_required
 def mark_notifications_read():
     user = get_current_user()
-    conn = get_db()
-    conn.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', (user['id'],))
-    conn.commit()
+    get_db().execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', (user['id'],))
+    get_db().commit()
     return jsonify({'status': 'ok'})
 
 
@@ -1441,48 +1051,24 @@ def mark_notifications_read():
 def notifications():
     user = get_current_user()
     conn = get_db()
-
-    notifs = conn.execute('''
-        SELECT * FROM notifications
-        WHERE user_id = ?
-        ORDER BY created_at DESC LIMIT 50
-    ''', (user['id'],)).fetchall()
-
+    notifs = conn.execute('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', (user['id'],)).fetchall()
     conn.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', (user['id'],))
     conn.commit()
-
-    chat_messages = get_chat_messages()
-    return render_template('notifications.html', notifications=notifs, chat_messages=chat_messages)
+    return render_template('notifications.html', notifications=notifs, chat_messages=get_chat_messages())
 
 
 @app.route('/api/report', methods=['POST'])
 @login_required
 def submit_report():
     user = get_current_user()
-    post_id = request.form.get('post_id')
-    comment_id = request.form.get('comment_id')
-    reported_user_id = request.form.get('user_id')
     category = request.form.get('category')
-    description = request.form.get('description', '').strip()
-
     if category not in [c[0] for c in REPORT_CATEGORIES]:
         flash('Неверная категория', 'danger')
         return redirect(request.referrer or '/')
-
-    conn = get_db()
-    conn.execute('''
-        INSERT INTO reports (reporter_id, post_id, comment_id, user_id, category, description)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (
-        user['id'],
-        post_id if post_id else None,
-        comment_id if comment_id else None,
-        reported_user_id if reported_user_id else None,
-        category,
-        description
-    ))
-    conn.commit()
-
+    get_db().execute('INSERT INTO reports (reporter_id, post_id, comment_id, user_id, category, description) VALUES (?, ?, ?, ?, ?, ?)',
+        (user['id'], request.form.get('post_id') or None, request.form.get('comment_id') or None,
+         request.form.get('user_id') or None, category, request.form.get('description', '').strip()))
+    get_db().commit()
     flash('Жалоба отправлена', 'success')
     return redirect(request.referrer or '/')
 
@@ -1497,25 +1083,21 @@ def admin_dashboard():
         'channels': conn.execute('SELECT COUNT(*) as c FROM channels').fetchone()['c'],
         'reports_pending': conn.execute('SELECT COUNT(*) as c FROM reports WHERE status = "pending"').fetchone()['c'],
         'bans_active': conn.execute('SELECT COUNT(*) as c FROM users WHERE is_banned = 1').fetchone()['c'],
+        'total_views': conn.execute('SELECT COALESCE(SUM(view_count), 0) as c FROM posts').fetchone()['c'],
     }
+    return render_template('admin/dashboard.html', stats=stats,
+        recent_users=conn.execute('SELECT * FROM users ORDER BY created_at DESC LIMIT 5').fetchall(),
+        recent_reports=conn.execute('SELECT r.*, u.username as reporter_name FROM reports r JOIN users u ON r.reporter_id = u.id WHERE r.status = "pending" ORDER BY r.created_at DESC LIMIT 5').fetchall(),
+        chat_messages=get_chat_messages())
 
-    recent_users = conn.execute('SELECT * FROM users ORDER BY created_at DESC LIMIT 5').fetchall()
-    recent_reports = conn.execute('''
-        SELECT r.*, u.username as reporter_name
-        FROM reports r
-        JOIN users u ON r.reporter_id = u.id
-        WHERE r.status = 'pending'
-        ORDER BY r.created_at DESC LIMIT 5
-    ''').fetchall()
 
-    chat_messages = get_chat_messages()
-    return render_template(
-        'admin/dashboard.html',
-        stats=stats,
-        recent_users=recent_users,
-        recent_reports=recent_reports,
-        chat_messages=chat_messages
-    )
+@app.route('/admin/analytics')
+@role_required('moderator')
+def admin_analytics():
+    conn = get_db()
+    top_posts = conn.execute('SELECT p.*, u.username, p.view_count, (SELECT COUNT(*) FROM reactions WHERE post_id = p.id) as reaction_count, (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count FROM posts p JOIN users u ON p.user_id = u.id WHERE p.is_story = 0 ORDER BY p.view_count DESC LIMIT 20').fetchall()
+    top_users = conn.execute('SELECT u.username, u.avatar, (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as post_count, (SELECT COALESCE(SUM(view_count), 0) FROM posts WHERE user_id = u.id) as total_views FROM users u ORDER BY total_views DESC LIMIT 20').fetchall()
+    return render_template('admin/analytics.html', top_posts=top_posts, top_users=top_users, chat_messages=get_chat_messages())
 
 
 @app.route('/admin/users')
@@ -1523,17 +1105,8 @@ def admin_dashboard():
 def admin_users():
     search = request.args.get('q', '').strip()
     conn = get_db()
-
-    if search:
-        users = conn.execute(
-            'SELECT * FROM users WHERE username LIKE ? OR email LIKE ? ORDER BY created_at DESC',
-            (f'%{search}%', f'%{search}%')
-        ).fetchall()
-    else:
-        users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template('admin/users.html', users=users, search=search, chat_messages=chat_messages)
+    users = conn.execute('SELECT * FROM users WHERE username LIKE ? OR email LIKE ? ORDER BY created_at DESC', (f'%{search}%', f'%{search}%')).fetchall() if search else conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
+    return render_template('admin/users.html', users=users, search=search, chat_messages=get_chat_messages())
 
 
 @app.route('/admin/users/<int:user_id>/role', methods=['POST'])
@@ -1541,27 +1114,17 @@ def admin_users():
 def admin_change_role(user_id):
     admin = get_current_user()
     new_role = request.form.get('role')
-    conn = get_db()
-
     if new_role not in ROLES:
         flash('Неверная роль', 'danger')
         return redirect('/admin/users')
-
-    target_user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not target_user:
-        flash('Пользователь не найден', 'danger')
+    target = get_db().execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not target or target['id'] == admin['id']:
+        flash('Ошибка', 'danger')
         return redirect('/admin/users')
-
-    if target_user['id'] == admin['id']:
-        flash('Нельзя изменить свою роль', 'danger')
-        return redirect('/admin/users')
-
-    conn.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
-    conn.commit()
-
-    log_admin_action(admin['id'], 'change_role', 'user', user_id, f'Новая роль: {new_role}')
-
-    flash(f'Роль пользователя изменена на {new_role}', 'success')
+    get_db().execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
+    get_db().commit()
+    log_admin_action(admin['id'], 'change_role', 'user', user_id, new_role)
+    flash(f'Роль: {new_role}', 'success')
     return redirect('/admin/users')
 
 
@@ -1569,46 +1132,28 @@ def admin_change_role(user_id):
 @role_required('moderator')
 def admin_ban_user(user_id):
     admin = get_current_user()
-    ban_type = request.form.get('ban_type')
-    duration = request.form.get('duration')
-    reason = request.form.get('reason', '').strip()
     conn = get_db()
-
     target = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not target:
-        flash('Пользователь не найден', 'danger')
+    if not target or ROLES.get(target['role'], 0) >= ROLES.get(admin['role'], 0):
+        flash('Ошибка', 'danger')
         return redirect('/admin/users')
-
-    if ROLES.get(target['role'], 0) >= ROLES.get(admin['role'], 0):
-        flash('Нельзя забанить пользователя с равной или высшей ролью', 'danger')
-        return redirect('/admin/users')
-
+    ban_type = request.form.get('ban_type')
+    reason = request.form.get('reason', '').strip()
     if ban_type == 'permanent':
         if admin['role'] != 'admin':
-            flash('Только админ может выдавать перманентный бан', 'danger')
+            flash('Только админ', 'danger')
             return redirect('/admin/users')
-        conn.execute(
-            'UPDATE users SET is_banned = 1, ban_until = NULL, ban_reason = ? WHERE id = ?',
-            (reason, user_id)
-        )
+        conn.execute('UPDATE users SET is_banned = 1, ban_until = NULL, ban_reason = ? WHERE id = ?', (reason, user_id))
         ban_until = None
     else:
-        hours = int(duration) if duration else 24
+        hours = int(request.form.get('duration', 24))
         ban_until = (datetime.now() + timedelta(hours=hours)).isoformat()
-        conn.execute(
-            'UPDATE users SET is_banned = 1, ban_until = ?, ban_reason = ? WHERE id = ?',
-            (ban_until, reason, user_id)
-        )
-
-    conn.execute(
-        'INSERT INTO user_bans (user_id, banned_by, reason, is_permanent, ban_until) VALUES (?, ?, ?, ?, ?)',
-        (user_id, admin['id'], reason, 1 if ban_type == 'permanent' else 0, ban_until)
-    )
+        conn.execute('UPDATE users SET is_banned = 1, ban_until = ?, ban_reason = ? WHERE id = ?', (ban_until, reason, user_id))
+    conn.execute('INSERT INTO user_bans (user_id, banned_by, reason, is_permanent, ban_until) VALUES (?, ?, ?, ?, ?)',
+        (user_id, admin['id'], reason, 1 if ban_type == 'permanent' else 0, ban_until))
     conn.commit()
-
-    log_admin_action(admin['id'], 'ban_user', 'user', user_id, f'Тип: {ban_type}, Причина: {reason}')
-
-    flash('Пользователь забанен', 'success')
+    log_admin_action(admin['id'], 'ban_user', 'user', user_id, f'{ban_type}: {reason}')
+    flash('Забанен', 'success')
     return redirect('/admin/users')
 
 
@@ -1616,14 +1161,10 @@ def admin_ban_user(user_id):
 @role_required('moderator')
 def admin_unban_user(user_id):
     admin = get_current_user()
-    conn = get_db()
-
-    conn.execute('UPDATE users SET is_banned = 0, ban_until = NULL, ban_reason = NULL WHERE id = ?', (user_id,))
-    conn.commit()
-
+    get_db().execute('UPDATE users SET is_banned = 0, ban_until = NULL, ban_reason = NULL WHERE id = ?', (user_id,))
+    get_db().commit()
     log_admin_action(admin['id'], 'unban_user', 'user', user_id)
-
-    flash('Пользователь разбанен', 'success')
+    flash('Разбанен', 'success')
     return redirect('/admin/users')
 
 
@@ -1631,27 +1172,14 @@ def admin_unban_user(user_id):
 @role_required('admin')
 def admin_delete_user(user_id):
     admin = get_current_user()
-    conn = get_db()
-
-    target = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not target:
-        flash('Пользователь не найден', 'danger')
+    target = get_db().execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not target or target['id'] == admin['id'] or target['role'] == 'admin':
+        flash('Ошибка', 'danger')
         return redirect('/admin/users')
-
-    if target['id'] == admin['id']:
-        flash('Нельзя удалить себя', 'danger')
-        return redirect('/admin/users')
-
-    if target['role'] == 'admin':
-        flash('Нельзя удалить администратора', 'danger')
-        return redirect('/admin/users')
-
-    conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
-    conn.commit()
-
-    log_admin_action(admin['id'], 'delete_user', 'user', user_id, f'Удалён: {target["username"]}')
-
-    flash('Пользователь удалён', 'success')
+    get_db().execute('DELETE FROM users WHERE id = ?', (user_id,))
+    get_db().commit()
+    log_admin_action(admin['id'], 'delete_user', 'user', user_id, target['username'])
+    flash('Удалён', 'success')
     return redirect('/admin/users')
 
 
@@ -1659,39 +1187,20 @@ def admin_delete_user(user_id):
 @role_required('moderator')
 def admin_reports():
     status = request.args.get('status', 'pending')
-    conn = get_db()
-
-    reports = conn.execute('''
-        SELECT r.*,
-               reporter.username as reporter_name,
-               p.title as post_title,
-               c.content as comment_content,
-               reported_user.username as reported_username
-        FROM reports r
-        JOIN users reporter ON r.reporter_id = reporter.id
-        LEFT JOIN posts p ON r.post_id = p.id
-        LEFT JOIN comments c ON r.comment_id = c.id
-        LEFT JOIN users reported_user ON r.user_id = reported_user.id
-        WHERE r.status = ?
-        ORDER BY r.created_at DESC
-    ''', (status,)).fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template('admin/reports.html', reports=reports, current_status=status, chat_messages=chat_messages)
+    reports = get_db().execute('SELECT r.*, reporter.username as reporter_name, p.title as post_title, c.content as comment_content, ru.username as reported_username FROM reports r JOIN users reporter ON r.reporter_id = reporter.id LEFT JOIN posts p ON r.post_id = p.id LEFT JOIN comments c ON r.comment_id = c.id LEFT JOIN users ru ON r.user_id = ru.id WHERE r.status = ? ORDER BY r.created_at DESC', (status,)).fetchall()
+    return render_template('admin/reports.html', reports=reports, current_status=status, chat_messages=get_chat_messages())
 
 
 @app.route('/admin/reports/<int:report_id>/handle', methods=['POST'])
 @role_required('moderator')
 def admin_handle_report(report_id):
     admin = get_current_user()
-    action = request.form.get('action')
     conn = get_db()
-
     report = conn.execute('SELECT * FROM reports WHERE id = ?', (report_id,)).fetchone()
     if not report:
-        flash('Жалоба не найдена', 'danger')
+        flash('Не найдена', 'danger')
         return redirect('/admin/reports')
-
+    action = request.form.get('action')
     if action == 'approve':
         if report['post_id']:
             conn.execute('DELETE FROM posts WHERE id = ?', (report['post_id'],))
@@ -1700,62 +1209,46 @@ def admin_handle_report(report_id):
         status = 'approved'
     else:
         status = 'rejected'
-
-    conn.execute(
-        'UPDATE reports SET status = ?, handled_by = ?, handled_at = CURRENT_TIMESTAMP WHERE id = ?',
-        (status, admin['id'], report_id)
-    )
+    conn.execute('UPDATE reports SET status = ?, handled_by = ?, handled_at = CURRENT_TIMESTAMP WHERE id = ?', (status, admin['id'], report_id))
     conn.commit()
-
     log_admin_action(admin['id'], f'report_{action}', 'report', report_id)
-
-    flash(f'Жалоба {"одобрена" if action == "approve" else "отклонена"}', 'success')
+    flash('Обработано', 'success')
     return redirect('/admin/reports')
 
 
 @app.route('/admin/bans')
 @role_required('moderator')
 def admin_bans():
-    conn = get_db()
-    bans = conn.execute('''
-        SELECT ub.*, u.username as banned_username, admin.username as admin_username
-        FROM user_bans ub
-        JOIN users u ON ub.user_id = u.id
-        JOIN users admin ON ub.banned_by = admin.id
-        ORDER BY ub.created_at DESC
-    ''').fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template('admin/bans.html', bans=bans, chat_messages=chat_messages)
+    bans = get_db().execute('SELECT ub.*, u.username as banned_username, a.username as admin_username FROM user_bans ub JOIN users u ON ub.user_id = u.id JOIN users a ON ub.banned_by = a.id ORDER BY ub.created_at DESC').fetchall()
+    return render_template('admin/bans.html', bans=bans, chat_messages=get_chat_messages())
 
 
 @app.route('/admin/logs')
 @role_required('admin')
 def admin_logs():
-    conn = get_db()
-    logs = conn.execute('''
-        SELECT al.*, u.username as admin_username
-        FROM admin_logs al
-        JOIN users u ON al.admin_id = u.id
-        ORDER BY al.created_at DESC LIMIT 100
-    ''').fetchall()
-
-    chat_messages = get_chat_messages()
-    return render_template('admin/logs.html', logs=logs, chat_messages=chat_messages)
+    logs = get_db().execute('SELECT al.*, u.username as admin_username FROM admin_logs al JOIN users u ON al.admin_id = u.id ORDER BY al.created_at DESC LIMIT 100').fetchall()
+    return render_template('admin/logs.html', logs=logs, chat_messages=get_chat_messages())
 
 
 @app.route('/admin/posts/<int:post_id>/delete', methods=['POST'])
-@role_required('moderator')
+@login_required
 def admin_delete_post(post_id):
-    admin = get_current_user()
+    user = get_current_user()
     conn = get_db()
-
+    post = conn.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    if not post:
+        flash('Не найден', 'danger')
+        return redirect(request.referrer or '/')
+    if post['user_id'] != user['id'] and user['role'] not in ['admin', 'moderator']:
+        flash('Недостаточно прав', 'danger')
+        return redirect(request.referrer or '/')
+    for table in ['post_files', 'comments', 'reactions', 'post_views', 'post_hashtags']:
+        conn.execute(f'DELETE FROM {table} WHERE post_id = ?', (post_id,))
     conn.execute('DELETE FROM posts WHERE id = ?', (post_id,))
     conn.commit()
-
-    log_admin_action(admin['id'], 'delete_post', 'post', post_id)
-
-    flash('Пост удалён', 'success')
+    if user['role'] in ['admin', 'moderator'] and post['user_id'] != user['id']:
+        log_admin_action(user['id'], 'delete_post', 'post', post_id)
+    flash('Удалён', 'success')
     return redirect(request.referrer or '/')
 
 
@@ -1763,14 +1256,10 @@ def admin_delete_post(post_id):
 @role_required('moderator')
 def admin_delete_comment(comment_id):
     admin = get_current_user()
-    conn = get_db()
-
-    conn.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
-    conn.commit()
-
+    get_db().execute('DELETE FROM comments WHERE id = ?', (comment_id,))
+    get_db().commit()
     log_admin_action(admin['id'], 'delete_comment', 'comment', comment_id)
-
-    flash('Комментарий удалён', 'success')
+    flash('Удалён', 'success')
     return redirect(request.referrer or '/')
 
 
@@ -1778,14 +1267,10 @@ def admin_delete_comment(comment_id):
 @role_required('admin')
 def admin_delete_channel(channel_id):
     admin = get_current_user()
-    conn = get_db()
-
-    conn.execute('DELETE FROM channels WHERE id = ?', (channel_id,))
-    conn.commit()
-
+    get_db().execute('DELETE FROM channels WHERE id = ?', (channel_id,))
+    get_db().commit()
     log_admin_action(admin['id'], 'delete_channel', 'channel', channel_id)
-
-    flash('Канал удалён', 'success')
+    flash('Удалён', 'success')
     return redirect('/channels')
 
 
@@ -1796,9 +1281,12 @@ def uploaded_file(filename):
 
 @app.route('/user_agreement')
 def user_agreement():
-    user = get_current_user()
-    chat_messages = get_chat_messages() if user else []
-    return render_template('user_agreement.html', chat_messages=chat_messages)
+    return render_template('user_agreement.html', chat_messages=get_chat_messages() if get_current_user() else [])
+
+
+@app.route('/about')
+def about():
+    return render_template('about.html', chat_messages=get_chat_messages() if get_current_user() else [])
 
 
 @app.errorhandler(404)
@@ -1810,33 +1298,8 @@ def page_not_found(e):
 def internal_error(e):
     return render_template('errors/500.html'), 500
 
-@app.route('/about')
-def about():
-    user = get_current_user()
-    chat_messages = get_chat_messages() if user else []
-    return render_template('about.html', chat_messages=chat_messages)
 
-@app.route('/api/search/users')
-@login_required
-def api_search_users():
-    q = request.args.get('q', '').strip()
-    if not q:
-        return jsonify([])
-
-    conn = get_db()
-    users = conn.execute(
-        'SELECT id, username, avatar, bio FROM users WHERE username LIKE ? LIMIT 10',
-        (f'%{q}%',)
-    ).fetchall()
-
-    return jsonify([{
-        'id': u['id'],
-        'username': u['username'],
-        'avatar': u['avatar'],
-        'bio': u['bio']
-    } for u in users])
 init_db()
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1324)

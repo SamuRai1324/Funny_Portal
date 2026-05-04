@@ -1,37 +1,49 @@
 {% extends 'base.html' %}
 {% block title %}Создать пост - Aura Nexus{% endblock %}
-
 {% block content %}
 <div style="max-width: 700px;">
-    <h1 style="margin-bottom: 1.5rem;">📝 Создать текстовый пост</h1>
-
+    <h1 class="page-title">📝 Создать пост</h1>
     <div class="card">
         <div class="card-body">
-            <form method="POST" action="/create/post">
+            <form method="POST" action="/create/post" enctype="multipart/form-data">
                 {% if channels %}
                 <div class="form-group">
-                    <label class="form-label">Опубликовать в</label>
+                    <label class="form-label">Канал</label>
                     <select name="channel_id" class="form-control">
-                        <option value="">От своего имени</option>
-                        {% for channel in channels %}
-                        <option value="{{ channel.id }}">📺 {{ channel.name }}</option>
-                        {% endfor %}
+                        <option value="">От себя</option>
+                        {% for c in channels %}<option value="{{ c.id }}">📺 {{ c.name }}</option>{% endfor %}
                     </select>
                 </div>
                 {% endif %}
-
                 <div class="form-group">
-                    <label class="form-label">Заголовок (необязательно)</label>
-                    <input type="text" name="title" class="form-control" placeholder="Введите заголовок">
+                    <label class="form-label">Заголовок</label>
+                    <input type="text" name="title" class="form-control" placeholder="Заголовок (необязательно)">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Текст</label>
-                    <textarea name="content" class="form-control" placeholder="О чём хотите рассказать? Используйте #хештеги" required style="min-height: 200px;"></textarea>
-                    <span class="form-hint">Поддерживаются #хештеги</span>
+                    <textarea name="content" class="form-control" placeholder="Текст... #хештеги" required style="min-height:160px;"></textarea>
                 </div>
-
-                <div style="display: flex; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Фото</label>
+                    <div class="file-upload">
+                        <input type="file" name="photos" accept="image/*" multiple>
+                        <div class="file-upload-icon">🖼️</div>
+                        <div class="file-upload-text">Нажмите или перетащите</div>
+                        <div class="file-upload-hint">До 10 фото</div>
+                        <div class="file-preview"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Видео</label>
+                    <div class="file-upload">
+                        <input type="file" name="video" accept="video/*">
+                        <div class="file-upload-icon">📹</div>
+                        <div class="file-upload-text">Нажмите или перетащите</div>
+                        <div class="file-upload-hint">MP4, WebM до 100MB</div>
+                        <div class="file-preview"></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:1rem;">
                     <button type="submit" class="btn">Опубликовать</button>
                     <a href="/" class="btn btn-secondary">Отмена</a>
                 </div>
