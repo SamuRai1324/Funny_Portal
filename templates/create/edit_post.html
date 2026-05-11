@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Редактировать пост - Aura Nexus{% endblock %}
+
+{% block head %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px;">
+    <a href="/post/{{ post.id }}" class="back-link" style="display:inline-block;margin-bottom:1rem;color:var(--text-muted);font-weight:600;">← Назад к посту</a>
+    <h1 class="page-title">✏️ Редактировать публикацию</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="/post/{{ post.id }}/edit" id="edit-form" data-post-type="{{ post.post_type }}">
+                <div class="form-group">
+                    <label class="form-label">Заголовок</label>
+                    <input type="text" name="title" class="form-control" value="{{ post.title or '' }}" placeholder="Заголовок">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if post.post_type == 'article' %}
+                        Содержание
+                        {% else %}
+                        Текст
+                        {% endif %}
+                    </label>
+
+                    {% if post.post_type == 'article' %}
+                    <div id="editor" class="editor-article"></div>
+                    {% else %}
+                    <div id="editor" class="editor-post"></div>
+                    {% endif %}
+
+                    <input type="hidden" name="content" id="content-input" value="{{ post.content or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <div class="nsfw-check">
+                        <input type="checkbox" name="is_nsfw" id="nsfw-check" {% if post.is_nsfw %}checked{% endif %}>
+                        <label for="nsfw-check">Этот контент содержит материалы 18+</label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn">Сохранить изменения</button>
+                    <a href="/post/{{ post.id }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.back-link:hover {
+    color: var(--accent-green);
+}
+
+.editor-article {
+    min-height: 300px;
+}
+
+.editor-post {
+    min-height: 200px;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('edit-form');
+    var editorEl = document.getElementById('editor');
+    var hiddenInput = document.getElementById('content-input');
+
+    if (!form || !editorEl || !hiddenInput || typeof Quill === 'undefined') return;
+
+    var isArticle = form.dataset.postType === 'article';
+
+    var quill = new Quill('#editor', {
+        theme: 'snow',
+        placeholder: 'Начните писать...',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link'],
+                [{ 'color': [] }, { 'background': [] }],
+                ['clean']
+            ]
+        }
+    });
+
+    if (hiddenInput.value) {
+        if (isArticle) {
+            quill.root.innerHTML = hiddenInput.value;
+        } else {
+            quill.setText(hiddenInput.value);
+        }
+    }
+
+    form.addEventListener('submit', function(e) {
+        var html = quill.root.innerHTML;
+        var text = quill.getText().trim();
+
+        if (!text) {
+            e.preventDefault();
+            if (typeof showToast === 'function') showToast('Введите содержание', 'warning');
+            else alert('Введите содержание');
+            return;
+        }
+
+        hiddenInput.value = isArticle ? html : text;
+    });
+});
+</script>
+{% endblock %}

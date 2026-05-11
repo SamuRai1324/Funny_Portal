@@ -92,7 +92,7 @@
 
                         <label class="theme-option {% if current_user.theme == 'custom' %}active{% endif %}">
                             <input type="radio" name="theme" value="custom"
-                                   {% if current_user.theme == 'custom' %}checked{% endif %}>
+                                {% if current_user.theme == 'custom' %}checked{% endif %}>
                             <div class="theme-preview theme-preview-custom">
                                 <div class="theme-preview-nav"></div>
                                 <div class="theme-preview-content">

@@ -19,11 +19,12 @@
             {% if notif.type == 'reaction' %}👍
             {% elif notif.type == 'comment' %}💬
             {% elif notif.type == 'subscribe' %}👤
+            {% elif notif.type == 'message' %}✉️
             {% else %}🔔{% endif %}
         </div>
         <div class="notification-content">
             <div class="notification-text">{{ notif.content }}</div>
-            <div class="notification-time">{{ notif.created_at[:16] }}</div>
+            <div class="notification-time" data-utc="{{ notif.created_at }}">{{ notif.created_at[:16] }}</div>
         </div>
         {% if notif.link %}
         <a href="{{ notif.link }}" class="btn btn-sm btn-secondary">Перейти</a>
@@ -39,62 +40,20 @@
 </div>
 
 <style>
-.page-title {
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.page-title-icon {
-    width: 32px !important;
-    height: 32px !important;
-}
-
-.page-title-icon img {
-    width: 32px !important;
-    height: 32px !important;
-}
-
+.page-title-icon { width: 32px !important; height: 32px !important; }
+.page-title-icon img { width: 32px !important; height: 32px !important; }
 .notification-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
 }
-
-.notification-item:last-child {
-    border-bottom: none;
-}
-
-.notification-unread {
-    background: rgba(124, 58, 237, 0.05);
-}
-
+.notification-item:last-child { border-bottom: none; }
+.notification-unread { background: rgba(124, 58, 237, 0.05); }
 .notification-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
+    width: 48px; height: 48px; border-radius: 50%; background: var(--bg-tertiary);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
 }
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-text {
-    color: var(--text-primary);
-}
-
-.notification-time {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
+.notification-content { flex: 1; }
+.notification-text { color: var(--text-primary); }
+.notification-time { font-size: 0.8rem; color: var(--text-muted); }
 </style>
 {% endblock %}

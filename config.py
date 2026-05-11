@@ -52,7 +52,23 @@ REPORT_CATEGORIES = [
     ('other', 'Другое'),
 ]
 
-FONT_FAMILY = "'Kanit', 'Segoe UI', Roboto, sans-serif"
+POST_TYPE_LABELS = {
+    'text': 'Пост',
+    'video': 'Видео',
+    'photo': 'Фото',
+    'audio': 'Аудио',
+    'article': 'Статья',
+    'story': 'История',
+}
+
+NSFW_KEYWORDS = [
+    'порно', 'порнография', 'xxx', 'секс видео', 'эротика',
+    'наркотики', 'купить наркотики', 'закладки',
+    'убить', 'убийство', 'терроризм', 'взрыв',
+    'нацизм', 'фашизм', 'расизм',
+]
+
+FONT_FAMILY = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
 
 for folder in UPLOAD_FOLDERS.values():
     os.makedirs(folder, exist_ok=True)

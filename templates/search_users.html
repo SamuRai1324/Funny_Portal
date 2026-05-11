@@ -6,13 +6,8 @@
 
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-body">
-        <form method="GET" action="/search/users" class="search-users-form">
-            <input type="text"
-                   name="q"
-                   value="{{ search_query }}"
-                   placeholder="Введите имя пользователя..."
-                   class="form-control"
-                   autofocus>
+        <form method="GET" action="/search/users" style="display:flex;gap:0.75rem;align-items:center;">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Введите имя (минимум 2 символа)..." class="form-control" style="flex:1;margin:0;" autofocus>
             <button type="submit" class="btn">Найти</button>
         </form>
     </div>
@@ -26,17 +21,11 @@
             <div class="user-card-avatar">
                 {% if user.avatar %}
                 <img src="{{ url_for('uploaded_file', filename=user.avatar) }}" alt="">
-                {% else %}
-                {{ user.username[0]|upper }}
-                {% endif %}
+                {% else %}{{ user.username[0]|upper }}{% endif %}
             </div>
             <div class="user-card-info">
                 <div class="user-card-name">{{ user.username }}</div>
-                {% if user.bio %}
-                <div class="user-card-bio">{{ user.bio }}</div>
-                {% else %}
-                <div class="user-card-bio">Нет описания</div>
-                {% endif %}
+                <div class="user-card-bio">{{ user.bio or 'Нет описания' }}</div>
             </div>
         </a>
         {% endfor %}
@@ -55,17 +44,4 @@
     <p>Найдите людей по имени пользователя</p>
 </div>
 {% endif %}
-
-<style>
-.search-users-form {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-}
-
-.search-users-form .form-control {
-    flex: 1;
-    margin: 0;
-}
-</style>
 {% endblock %}

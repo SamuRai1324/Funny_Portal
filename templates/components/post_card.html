@@ -1,13 +1,15 @@
-<article class="post-card" id="post-{{ post.id }}" data-type="{{ post.post_type }}">
+<article class="post-card {% if post.is_viewed %}post-viewed{% endif %}" id="post-{{ post.id }}" data-type="{{ post.post_type }}">
     <div class="post-header">
         {% if post.channel_id and post.channel_name %}
         <a href="/channel/{{ post.channel_id }}" class="post-avatar">
-            {% if post.channel_avatar %}<img src="{{ url_for('uploaded_file', filename=post.channel_avatar) }}" alt="">
+            {% if post.channel_avatar %}
+            <img src="{{ url_for('uploaded_file', filename=post.channel_avatar) }}" alt="">
             {% else %}📺{% endif %}
         </a>
         {% else %}
         <a href="/profile/{{ post.username }}" class="post-avatar">
-            {% if post.avatar %}<img src="{{ url_for('uploaded_file', filename=post.avatar) }}" alt="">
+            {% if post.avatar %}
+            <img src="{{ url_for('uploaded_file', filename=post.avatar) }}" alt="">
             {% else %}{{ post.username[0]|upper }}{% endif %}
         </a>
         {% endif %}
@@ -16,13 +18,21 @@
             <div class="post-author">
                 {% if post.channel_id and post.channel_name %}
                 <a href="/channel/{{ post.channel_id }}">{{ post.channel_name }}</a>
-                <span class="post-author-sub">от <a href="/profile/{{ post.username }}">{{ post.username }}</a></span>
+                <span class="post-author-sub">от <a href="/profile/{{ post.username }}">@{{ post.username }}</a></span>
                 {% else %}
                 <a href="/profile/{{ post.username }}">{{ post.username }}</a>
                 {% endif %}
                 <span class="post-badge {{ post.post_type }}">
-                    {% if post.post_type == 'text' %}Пост{% elif post.post_type == 'video' %}Видео{% elif post.post_type == 'photo' %}Фото{% elif post.post_type == 'audio' %}Аудио{% elif post.post_type == 'article' %}Статья{% else %}{{ post.post_type }}{% endif %}
+                    {% if post.post_type == 'text' %}Пост
+                    {% elif post.post_type == 'video' %}Видео
+                    {% elif post.post_type == 'photo' %}Фото
+                    {% elif post.post_type == 'audio' %}Аудио
+                    {% elif post.post_type == 'article' %}Статья
+                    {% else %}{{ post.post_type }}{% endif %}
                 </span>
+                {% if post.is_nsfw %}
+                <span class="post-nsfw-badge">🔞 18+</span>
+                {% endif %}
             </div>
             <div class="post-time">
                 <span data-utc="{{ post.created_at }}">{{ post.created_at[:16] }}</span>
@@ -32,12 +42,17 @@
         <div class="dropdown post-options">
             <button class="post-options-btn">⋮</button>
             <div class="dropdown-menu">
+                <a href="/post/{{ post.id }}" class="action-link">🔗 Открыть пост</a>
                 {% if current_user and (current_user.id == post.user_id or current_user.role in ['admin', 'moderator']) %}
+                {% if current_user.id == post.user_id %}
+                <a href="/post/{{ post.id }}/edit">✏️ Редактировать</a>
+                {% endif %}
                 <form action="/admin/posts/{{ post.id }}/delete" method="POST" style="margin:0;">
                     <button type="submit" class="danger" onclick="return confirm('Удалить?')">🗑️ Удалить</button>
                 </form>
                 {% endif %}
                 {% if current_user %}
+                <button class="share-post-btn" data-post-id="{{ post.id }}">📤 Поделиться</button>
                 <button data-modal="report-modal-{{ post.id }}">⚠️ Жалоба</button>
                 {% endif %}
             </div>
@@ -46,14 +61,20 @@
 
     <div class="post-content">
         {% if post.title %}
-        <h2 class="post-title"><a href="/post/{{ post.id }}" style="color:var(--text-primary);">{{ post.title }}</a></h2>
+        <h2 class="post-title">
+            <a href="/post/{{ post.id }}" style="color:var(--text-primary);">{{ post.title }}</a>
+        </h2>
         {% endif %}
         {% if post.post_type == 'article' %}
         <div class="post-text truncated" data-full-text="true">{{ post.content|safe }}</div>
         <button class="read-more-btn">Читать далее ↓</button>
         {% elif post.content %}
-        <div class="post-text {% if post.content|length > 500 %}truncated{% endif %}"><p>{{ post.content }}</p></div>
-        {% if post.content|length > 500 %}<button class="read-more-btn">Читать далее ↓</button>{% endif %}
+        <div class="post-text {% if post.content|length > 500 %}truncated{% endif %}">
+            <p>{{ post.content }}</p>
+        </div>
+        {% if post.content|length > 500 %}
+        <button class="read-more-btn">Читать далее ↓</button>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -75,7 +96,9 @@
             <div class="slideshow" data-slide-count="{{ photos|length }}">
                 <div class="slideshow-track">
                     {% for f in photos %}
-                    <div class="slideshow-slide"><img src="{{ url_for('uploaded_file', filename=f.file_path) }}" alt=""></div>
+                    <div class="slideshow-slide">
+                        <img src="{{ url_for('uploaded_file', filename=f.file_path) }}" alt="">
+                    </div>
                     {% endfor %}
                 </div>
                 <button class="slideshow-prev" type="button">‹</button>
@@ -91,16 +114,25 @@
         {% endif %}
 
         {% for f in videos %}
-        <div class="post-media"><video src="{{ url_for('uploaded_file', filename=f.file_path) }}" controls preload="metadata"></video></div>
+        <div class="post-media">
+            <video src="{{ url_for('uploaded_file', filename=f.file_path) }}" controls preload="metadata"></video>
+        </div>
         {% endfor %}
+
     {% elif post.post_type == 'video' and post.file_path %}
-    <div class="post-media"><video src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls preload="metadata"></video></div>
+    <div class="post-media">
+        <video src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls preload="metadata"></video>
+    </div>
     {% elif post.post_type == 'photo' and post.file_path and (not post.files or post.files|length == 0) %}
-    <div class="post-media slideshow-single"><img src="{{ url_for('uploaded_file', filename=post.file_path) }}" alt=""></div>
+    <div class="post-media slideshow-single">
+        <img src="{{ url_for('uploaded_file', filename=post.file_path) }}" alt="">
+    </div>
     {% endif %}
 
     {% if post.post_type == 'audio' and post.file_path %}
-    <div class="audio-player"><audio src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls></audio></div>
+    <div class="audio-player">
+        <audio src="{{ url_for('uploaded_file', filename=post.file_path) }}" controls></audio>
+    </div>
     {% endif %}
 
     {% if post.view_count is defined %}
@@ -110,7 +142,8 @@
     <div class="post-reactions" data-post-reactions="{{ post.id }}">
         {% set rmap = {'like': '👍', 'dislike': '👎', 'love': '❤️', 'laugh': '😂', 'wow': '😮', 'sad': '😢'} %}
         {% for rt in REACTION_TYPES %}
-        <button class="reaction-btn {% if post.user_reaction == rt %}active{% endif %}" data-post-id="{{ post.id }}" data-reaction="{{ rt }}">
+        <button class="reaction-btn {% if post.user_reaction == rt %}active{% endif %}"
+                data-post-id="{{ post.id }}" data-reaction="{{ rt }}">
             <span class="emoji">{{ rmap[rt] }}</span>
             <span class="reaction-count">{% if post.reactions and post.reactions.get(rt) %}{{ post.reactions[rt] }}{% endif %}</span>
         </button>
@@ -118,15 +151,21 @@
     </div>
 
     <div class="post-actions">
-        <button class="action-btn toggle-comments" data-post-id="{{ post.id }}">💬 <span class="comment-count-{{ post.id }}">{{ post.comment_count or 0 }}</span></button>
+        <button class="action-btn toggle-comments" data-post-id="{{ post.id }}">
+            💬 <span class="comment-count-{{ post.id }}">{{ post.comment_count or 0 }}</span>
+        </button>
         <a href="/post/{{ post.id }}" class="action-btn">📖 Открыть</a>
+        {% if current_user %}
+        <button class="action-btn share-post-btn" data-post-id="{{ post.id }}">📤 Поделиться</button>
+        {% endif %}
     </div>
 
     <div class="comments-section hidden" id="comments-{{ post.id }}">
         {% if current_user %}
         <div class="comment-form-wrap">
             <div class="comment-avatar-small">
-                {% if current_user.avatar %}<img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
+                {% if current_user.avatar %}
+                <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
                 {% else %}{{ current_user.username[0]|upper }}{% endif %}
             </div>
             <form class="comment-form" data-post-id="{{ post.id }}">
@@ -152,7 +191,9 @@
                 <div class="form-group">
                     <label class="form-label">Причина</label>
                     <select name="category" class="form-control" required>
-                        {% for v, l in REPORT_CATEGORIES %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+                        {% for v, l in REPORT_CATEGORIES %}
+                        <option value="{{ v }}">{{ l }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="form-group">
@@ -165,6 +206,24 @@
                 <button type="submit" class="btn btn-danger">Отправить</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Share modal -->
+<div class="modal-overlay" id="share-modal-{{ post.id }}">
+    <div class="modal" style="max-width:420px;">
+        <div class="modal-header">
+            <h3 class="modal-title">📤 Поделиться постом</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Найти пользователя</label>
+                <input type="text" class="form-control share-user-search"
+                    placeholder="Введите имя..." data-post-id="{{ post.id }}">
+            </div>
+            <div class="share-user-results" id="share-results-{{ post.id }}"></div>
+        </div>
     </div>
 </div>
 {% endif %}

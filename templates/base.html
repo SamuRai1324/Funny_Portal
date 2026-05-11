@@ -36,22 +36,36 @@
 </head>
 <body{% if current_user %} data-current-user-id="{{ current_user.id }}"{% endif %}>
 
-    {% if current_user and current_user.role == 'admin' %}
+    {% if current_user and current_user.role in ['admin', 'moderator'] %}
     <div class="admin-bar">
+        {% if current_user.role == 'admin' %}
         <span class="admin-bar-label">⚙️ АДМИН</span>
-        <a href="/admin">📊 Статистика</a>
-        <a href="/admin/users">👥 Пользователи</a>
-        <a href="/admin/reports">📋 Жалобы {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}</a>
-        <a href="/admin/analytics">📈 Аналитика</a>
-        <a href="/admin/bans">🚫 Баны</a>
-        <a href="/admin/logs">📝 Логи</a>
-    </div>
-    {% elif current_user and current_user.role == 'moderator' %}
-    <div class="admin-bar">
+        {% else %}
         <span class="admin-bar-label">🛡️ МОДЕРАТОР</span>
-        <a href="/admin/reports">📋 Жалобы {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}</a>
-        <a href="/admin/analytics">📈 Аналитика</a>
-        <a href="/admin/bans">🚫 Баны</a>
+        {% endif %}
+        <a href="/admin?tab=dashboard">📊 Панель</a>
+        <a href="/admin?tab=users">👥 Пользователи</a>
+        <a href="/admin?tab=reports">📋 Жалобы {% if pending_reports_count > 0 %}<span class="badge">{{ pending_reports_count }}</span>{% endif %}</a>
+        <a href="/admin?tab=analytics">📈 Аналитика</a>
+        <a href="/admin?tab=bans">🚫 Баны</a>
+        {% if current_user.role == 'admin' %}
+        <a href="/admin?tab=logs">📝 Логи</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if marquee_items and marquee_items|length > 0 %}
+    <div class="marquee-bar">
+        <div class="marquee-content">
+            {% for item in marquee_items %}
+            <a href="{{ item.link }}" class="marquee-item">{{ item.text }}</a>
+            <span class="marquee-separator">•</span>
+            {% endfor %}
+            {% for item in marquee_items %}
+            <a href="{{ item.link }}" class="marquee-item">{{ item.text }}</a>
+            <span class="marquee-separator">•</span>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
@@ -62,7 +76,9 @@
             <div class="logo-fallback" style="display:none;">AN</div>
         </a>
 
-        <div class="nav-center">
+        <div class="nav-spacer"></div>
+
+        <div class="nav-right">
             <form class="search-bar" action="/" method="GET">
                 <input type="text" name="q" placeholder="Поиск..." value="{{ request.args.get('q', '') }}">
                 <div class="search-divider"></div>
@@ -74,16 +90,26 @@
                 </button>
                 <div class="search-divider"></div>
                 <a href="/search/users?q={{ request.args.get('q', '') }}" class="search-btn-users" title="Люди">
-                    <img src="{{ url_for('static', filename='images/icons/search_users.png') }}" alt=""
+                    <img src="{{ url_for('static', filename='images/icons/search.png') }}" alt=""
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
                     <span class="emoji-fallback" style="display:none;">👤</span>
                     <span>Люди</span>
                 </a>
             </form>
-        </div>
 
-        <div class="nav-right">
             {% if current_user %}
+            <a href="/notifications" class="nav-link nav-notif-link" title="Уведомления">
+                <span class="nav-icon">
+                    <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span class="emoji-fallback" style="display:none;">🔔</span>
+                </span>
+                <span>Уведомления</span>
+                {% if notification_count > 0 %}
+                <span class="nav-badge notification-badge">{{ notification_count }}</span>
+                {% endif %}
+            </a>
+
             <div class="dropdown">
                 <div class="nav-user">
                     <div class="nav-user-avatar">
@@ -91,12 +117,15 @@
                         <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="">
                         {% else %}{{ current_user.username[0]|upper }}{% endif %}
                     </div>
-                    <span>{{ current_user.username }}</span>
+                    <span class="nav-user-name">{{ current_user.username }}</span>
                     <span class="nav-chevron">▼</span>
                 </div>
                 <div class="dropdown-menu">
                     <a href="/profile/{{ current_user.username }}">👤 Профиль</a>
-                    <a href="/profile/settings">⚙️ Настройки</a>
+                    <a href="/profile/settings">
+                        <span class="nav-icon"><img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt="" onerror="this.outerHTML='⚙️'"></span>
+                        Настройки
+                    </a>
                     <div class="dropdown-divider"></div>
                     <a href="/logout" class="danger">🚪 Выйти</a>
                 </div>
@@ -149,6 +178,23 @@
                     <span class="side-label">Уведомления</span>
                     {% if notification_count > 0 %}<span class="badge notification-badge">{{ notification_count }}</span>{% endif %}
                 </a>
+                <div class="side-divider"></div>
+                <a href="/profile/{{ current_user.username }}" class="side-link {% if '/profile/' ~ current_user.username == request.path %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">👤</span>
+                    </span>
+                    <span class="side-label">Мой профиль</span>
+                </a>
+                <a href="/profile/settings" class="side-link {% if '/profile/settings' == request.path %}active{% endif %}">
+                    <span class="side-icon">
+                        <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="emoji-fallback" style="display:none;">⚙️</span>
+                    </span>
+                    <span class="side-label">Настройки</span>
+                </a>
                 {% endif %}
             </nav>
             <div class="side-footer-links">
@@ -169,6 +215,7 @@
                 {% block content %}{% endblock %}
             </main>
 
+            {% set hide_sidebar = hide_sidebar|default(false) %}
             {% if current_user and not hide_sidebar %}
             <aside class="sidebar">
                 {% block sidebar %}
