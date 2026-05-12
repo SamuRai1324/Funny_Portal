@@ -469,7 +469,6 @@ def inject_globals():
 @app.route('/')
 def index():
     user = get_current_user()
-    current_tab = request.args.get('tab', 'all')
     search_query = request.args.get('q', '').strip()
     sort_by = request.args.get('sort', 'new')
     post_type = request.args.get('type', 'all')
@@ -477,45 +476,48 @@ def index():
 
     stories = []
     chat_messages = []
+
     if user:
         chat_messages = get_chat_messages()
         stories = conn.execute(
-            'SELECT p.*, u.username, u.avatar FROM posts p JOIN users u ON p.user_id = u.id '
-            'WHERE p.is_story = 1 AND p.story_expires_at > datetime("now") ORDER BY p.created_at DESC'
+            'SELECT p.*, u.username, u.avatar '
+            'FROM posts p '
+            'JOIN users u ON p.user_id = u.id '
+            'WHERE p.is_story = 1 AND p.story_expires_at > datetime("now") '
+            'ORDER BY p.created_at DESC'
         ).fetchall()
 
-    q = ('SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, '
-         '(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count '
-         'FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id '
-         'WHERE p.is_story = 0')
+    q = (
+        'SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, '
+        '(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count '
+        'FROM posts p '
+        'JOIN users u ON p.user_id = u.id '
+        'LEFT JOIN channels c ON p.channel_id = c.id '
+        'WHERE p.is_story = 0'
+    )
     params = []
 
     if search_query:
         q += ' AND (p.title LIKE ? OR p.content LIKE ?)'
         params.extend([f'%{search_query}%', f'%{search_query}%'])
 
-    if current_tab == 'popular':
+    if post_type != 'all':
+        q += ' AND p.post_type = ?'
+        params.append(post_type)
+
+    if not user:
+        q += ' AND p.is_nsfw = 0'
+
+    if sort_by == 'popular':
         q += ' ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50'
     elif sort_by == 'week':
-        q += " AND p.created_at > datetime('now', '-7 days') ORDER BY p.view_count DESC LIMIT 50"
+        q += " AND p.created_at > datetime('now', '-7 days') ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50"
     elif sort_by == 'month':
-        q += " AND p.created_at > datetime('now', '-30 days') ORDER BY p.view_count DESC LIMIT 50"
-    elif current_tab not in ('all',):
-        q += ' AND p.post_type = ?'
-        params.append(current_tab)
-        if sort_by == 'popular':
-            q += ' ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50'
-        elif sort_by == 'views':
-            q += ' ORDER BY p.view_count DESC LIMIT 50'
-        else:
-            q += ' ORDER BY p.created_at DESC LIMIT 50'
+        q += " AND p.created_at > datetime('now', '-30 days') ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50"
+    elif sort_by == 'views':
+        q += ' ORDER BY p.view_count DESC LIMIT 50'
     else:
-        if sort_by == 'popular':
-            q += ' ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50'
-        elif sort_by == 'views':
-            q += ' ORDER BY p.view_count DESC LIMIT 50'
-        else:
-            q += ' ORDER BY p.created_at DESC LIMIT 50'
+        q += ' ORDER BY p.created_at DESC LIMIT 50'
 
     posts = conn.execute(q, params).fetchall()
     posts_data = enrich_posts(posts, user, conn)
@@ -524,21 +526,20 @@ def index():
         for p in posts_data:
             record_view(p['id'], user['id'])
 
-    # для незалогиненных тоже показываем посты
-    all_posts_for_guests = []
+    guest_posts = []
     if not user:
-        guest_posts = conn.execute(
-            'SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, '
-            '(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count '
-            'FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id '
-            'WHERE p.is_story = 0 AND p.is_nsfw = 0 ORDER BY p.created_at DESC LIMIT 20'
-        ).fetchall()
-        all_posts_for_guests = enrich_posts(guest_posts, None, conn)
+        guest_posts = posts_data
 
-    return render_template('index.html', posts=posts_data, stories=stories,
-                           current_tab=current_tab, chat_messages=chat_messages,
-                           search_query=search_query, sort_by=sort_by,
-                           guest_posts=all_posts_for_guests)
+    return render_template(
+        'index.html',
+        posts=posts_data,
+        stories=stories,
+        chat_messages=chat_messages,
+        search_query=search_query,
+        sort_by=sort_by,
+        post_type=post_type,
+        guest_posts=guest_posts
+    )
 
 
 @app.route('/post/<int:post_id>')
@@ -726,39 +727,67 @@ def profile(username):
     puser = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     if not puser:
         abort(404)
+
     posts = conn.execute(
         'SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, '
         '(SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count '
-        'FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN channels c ON p.channel_id = c.id '
-        'WHERE p.user_id = ? AND p.is_story = 0 ORDER BY p.created_at DESC', (user['id'],)
+        'FROM posts p '
+        'JOIN users u ON p.user_id = u.id '
+        'LEFT JOIN channels c ON p.channel_id = c.id '
+        'WHERE p.user_id = ? AND p.is_story = 0 '
+        'ORDER BY p.created_at DESC',
+        (puser['id'],)
     ).fetchall()
+
     active_stories = conn.execute(
-        'SELECT * FROM posts WHERE user_id = ? AND is_story = 1 AND story_expires_at > datetime("now") '
-        'ORDER BY created_at DESC', (user['id'],)
+        'SELECT * FROM posts '
+        'WHERE user_id = ? AND is_story = 1 AND story_expires_at > datetime("now") '
+        'ORDER BY created_at DESC',
+        (puser['id'],)
     ).fetchall()
+
     archived_stories = conn.execute(
-        'SELECT * FROM posts WHERE user_id = ? AND is_story = 1 AND story_expires_at <= datetime("now") '
-        'ORDER BY created_at DESC LIMIT 20', (user['id'],)
+        'SELECT * FROM posts '
+        'WHERE user_id = ? AND is_story = 1 AND story_expires_at <= datetime("now") '
+        'ORDER BY created_at DESC LIMIT 20',
+        (puser['id'],)
     ).fetchall()
+
     channels = conn.execute(
-        'SELECT c.*, (SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count '
-        'FROM channels c WHERE c.creator_id = ?', (user['id'],)
+        'SELECT c.*, '
+        '(SELECT COUNT(*) FROM channel_subscribers WHERE channel_id = c.id) as sub_count '
+        'FROM channels c WHERE c.creator_id = ?',
+        (puser['id'],)
     ).fetchall()
+
     stats = {
-        'posts': conn.execute('SELECT COUNT(*) as c FROM posts WHERE user_id = ? AND is_story = 0',
-                              (user['id'],)).fetchone()['c'],
+        'posts': conn.execute(
+            'SELECT COUNT(*) as c FROM posts WHERE user_id = ? AND is_story = 0',
+            (puser['id'],)
+        ).fetchone()['c'],
         'subscribers': conn.execute(
-            'SELECT COUNT(*) as c FROM channel_subscribers cs JOIN channels ch ON cs.channel_id = ch.id '
-            'WHERE ch.creator_id = ?', (user['id'],)
+            'SELECT COUNT(*) as c '
+            'FROM channel_subscribers cs '
+            'JOIN channels ch ON cs.channel_id = ch.id '
+            'WHERE ch.creator_id = ?',
+            (puser['id'],)
         ).fetchone()['c'],
         'channels': len(channels),
     }
+
     current_user = get_current_user()
     chat_messages = get_chat_messages() if current_user else []
-    return render_template('profile/view.html', profile_user=user,
-                           posts=enrich_posts(posts, current_user, conn),
-                           active_stories=active_stories, archived_stories=archived_stories,
-                           channels=channels, stats=stats, chat_messages=chat_messages)
+
+    return render_template(
+        'profile/view.html',
+        profile_user=puser,
+        posts=enrich_posts(posts, current_user, conn),
+        active_stories=active_stories,
+        archived_stories=archived_stories,
+        channels=channels,
+        stats=stats,
+        chat_messages=chat_messages
+    )
 
 
 @app.route('/profile/settings', methods=['GET', 'POST'])
@@ -1026,6 +1055,7 @@ def create_story():
             if ext in ALLOWED_EXTENSIONS['photo'] or ext in ALLOWED_EXTENSIONS['video']:
                 file_path = save_file(media, 'story')
         expires = (datetime.now() + timedelta(hours=duration)).isoformat()
+        conn = get_db()
         cursor = conn.execute(
             'INSERT INTO posts (user_id, post_type, content, file_path, is_story, story_expires_at) '
             'VALUES (?, ?, ?, ?, 1, ?)',

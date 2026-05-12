@@ -9,6 +9,19 @@
 <div class="about-page">
     <h1 class="about-title">О нас</h1>
 
+    <!-- Фото по центру -->
+    <div class="about-photo-section">
+        <img src="{{ url_for('static', filename='images/about_photo.jpg') }}"
+             alt="О нас"
+             class="about-photo"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="about-photo-placeholder" style="display:none;">
+            <span>📸</span>
+            <span>Сюда можно вставить фотку</span>
+            <small>Путь: static/images/about_photo.jpg</small>
+        </div>
+    </div>
+
     <div class="about-section">
         <h2>Что такое Aura Nexus?</h2>
         <p>
@@ -76,6 +89,48 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.about-photo-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.about-photo {
+    max-width: 100%;
+    width: 100%;
+    max-width: 520px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    object-fit: cover;
+}
+
+.about-photo-placeholder {
+    width: 100%;
+    max-width: 520px;
+    min-height: 260px;
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-color);
+    background: var(--bg-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.about-photo-placeholder span:first-child {
+    font-size: 2.2rem;
+}
+
+.about-photo-placeholder small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
 }
 
 .about-section {
@@ -148,6 +203,10 @@
     .about-section p,
     .about-list li {
         font-size: 0.95rem;
+    }
+
+    .about-photo-placeholder {
+        min-height: 200px;
     }
 }
 </style>

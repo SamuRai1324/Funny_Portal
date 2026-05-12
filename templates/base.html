@@ -83,18 +83,18 @@
                 <input type="text" name="q" placeholder="Поиск..." value="{{ request.args.get('q', '') }}">
                 <div class="search-divider"></div>
                 <button type="submit" class="search-btn-posts" title="Посты">
-                    <img src="{{ url_for('static', filename='images/icons/search.png') }}" alt=""
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">🔍</span>
-                    <span>Посты</span>
-                </button>
+    <img src="{{ url_for('static', filename='images/icons/search.png') }}" alt=""
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+    <span class="emoji-fallback" style="display:none;">🔍</span>
+    <span>Посты</span>
+</button>
                 <div class="search-divider"></div>
                 <a href="/search/users?q={{ request.args.get('q', '') }}" class="search-btn-users" title="Люди">
-                    <img src="{{ url_for('static', filename='images/icons/search.png') }}" alt=""
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <span class="emoji-fallback" style="display:none;">👤</span>
-                    <span>Люди</span>
-                </a>
+    <img src="{{ url_for('static', filename='images/icons/search_people.png') }}" alt=""
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+    <span class="emoji-fallback" style="display:none;">👤</span>
+    <span>Люди</span>
+</a>
             </form>
 
             {% if current_user %}
@@ -141,67 +141,72 @@
 
     <div class="page-wrapper">
         <aside class="left-sidebar">
-            <nav class="side-nav">
-                <a href="/" class="side-link {% if request.path == '/' %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/home.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">🏠</span>
-                    </span>
-                    <span class="side-label">Главная</span>
-                </a>
-                <a href="/channels" class="side-link {% if '/channel' in request.path %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/channels.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">📺</span>
-                    </span>
-                    <span class="side-label">Каналы</span>
-                </a>
-                {% if current_user %}
-                <div class="side-divider"></div>
-                <a href="/messages" class="side-link {% if '/messages' in request.path %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">💬</span>
-                    </span>
-                    <span class="side-label">Сообщения</span>
-                    {% if message_count > 0 %}<span class="badge">{{ message_count }}</span>{% endif %}
-                </a>
-                <a href="/notifications" class="side-link {% if '/notifications' in request.path %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">🔔</span>
-                    </span>
-                    <span class="side-label">Уведомления</span>
-                    {% if notification_count > 0 %}<span class="badge notification-badge">{{ notification_count }}</span>{% endif %}
-                </a>
-                <div class="side-divider"></div>
-                <a href="/profile/{{ current_user.username }}" class="side-link {% if '/profile/' ~ current_user.username == request.path %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">👤</span>
-                    </span>
-                    <span class="side-label">Мой профиль</span>
-                </a>
-                <a href="/profile/settings" class="side-link {% if '/profile/settings' == request.path %}active{% endif %}">
-                    <span class="side-icon">
-                        <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <span class="emoji-fallback" style="display:none;">⚙️</span>
-                    </span>
-                    <span class="side-label">Настройки</span>
-                </a>
+    <nav class="side-nav">
+        <a href="/" class="side-link {% if request.path == '/' %}active{% endif %}">
+            <span class="side-icon">
+                <img src="{{ url_for('static', filename='images/icons/home.png') }}" alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="emoji-fallback" style="display:none;">🏠</span>
+            </span>
+            <span class="side-label">Главная</span>
+        </a>
+
+        <a href="/channels" class="side-link {% if '/channel' in request.path or request.path == '/channels' %}active{% endif %}">
+            <span class="side-icon">
+                <img src="{{ url_for('static', filename='images/icons/channels.png') }}" alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="emoji-fallback" style="display:none;">📺</span>
+            </span>
+            <span class="side-label">Каналы</span>
+        </a>
+
+        {% if current_user %}
+        <div class="side-divider"></div>
+
+        <a href="/messages" class="side-link {% if '/messages' in request.path %}active{% endif %}">
+            <span class="side-icon">
+                <img src="{{ url_for('static', filename='images/icons/messages.png') }}" alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="emoji-fallback" style="display:none;">💬</span>
+            </span>
+            <span class="side-label">Сообщения</span>
+            {% if message_count > 0 %}<span class="badge">{{ message_count }}</span>{% endif %}
+        </a>
+
+        <a href="/notifications" class="side-link {% if '/notifications' in request.path %}active{% endif %}">
+            <span class="side-icon">
+                <img src="{{ url_for('static', filename='images/icons/notifications.png') }}" alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="emoji-fallback" style="display:none;">🔔</span>
+            </span>
+            <span class="side-label">Уведомления</span>
+            {% if notification_count > 0 %}<span class="badge notification-badge">{{ notification_count }}</span>{% endif %}
+        </a>
+
+        <a href="/profile/{{ current_user.username }}" class="side-link {% if request.path == '/profile/' ~ current_user.username %}active{% endif %}">
+            <span class="side-icon">
+                {% if current_user.avatar %}
+                <span style="width:22px;height:22px;border-radius:50%;overflow:hidden;display:flex;">
+                    <img src="{{ url_for('uploaded_file', filename=current_user.avatar) }}" alt="" style="width:100%;height:100%;object-fit:cover;filter:none;">
+                </span>
+                {% else %}
+                <span class="emoji-fallback">👤</span>
                 {% endif %}
-            </nav>
-            <div class="side-footer-links">
-                <a href="/about">О нас</a>
-                <a href="/user_agreement">Правила</a>
-            </div>
-        </aside>
+            </span>
+            <span class="side-label">Мой профиль</span>
+        </a>
+
+        <a href="/profile/settings" class="side-link {% if request.path == '/profile/settings' %}active{% endif %}">
+            <span class="side-icon">
+                <img src="{{ url_for('static', filename='images/icons/settings.png') }}" alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="emoji-fallback" style="display:none;">⚙️</span>
+            </span>
+            <span class="side-label">Настройки</span>
+        </a>
+        {% endif %}
+    </nav>
+</aside>
 
         <div class="layout {% block layout_class %}{% endblock %}">
             <main class="main-content">
@@ -221,7 +226,14 @@
                 {% block sidebar %}
                 <div class="card chat-box">
                     <div class="card-header">
-                        <h3 class="card-title">🌐 Глобальный чат</h3>
+                        <h3 class="card-title">
+    <span class="nav-icon">
+        <img src="{{ url_for('static', filename='images/icons/global_chat.png') }}" alt=""
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">🌐</span>
+    </span>
+    Глобальный чат
+</h3>
                     </div>
                     <div class="chat-messages" id="global-chat-messages">
                         {% for msg in chat_messages %}

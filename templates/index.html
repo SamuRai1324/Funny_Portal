@@ -142,7 +142,11 @@
                 </a>
 
                 <a href="/create/video" class="create-option">
-                    <div class="create-option-icon">📹</div>
+                    <div class="create-option-icon">
+    <img src="{{ url_for('static', filename='images/icons/video.png') }}" alt=""
+         style="width:22px;height:22px;object-fit:contain;"
+         onerror="this.style.display='none'; this.parentNode.innerHTML='📹';">
+</div>
                     <div class="create-option-info">
                         <span class="create-option-title">Видео</span>
                         <span class="create-option-desc">Загрузите видеоролик</span>
@@ -283,7 +287,57 @@
     margin-top: 2rem;
 }
 
-.feature-card { text-align: center; padding: 2rem; }
+.feature-card {
+    text-align: center;
+    padding: 2rem;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::after {
+    content: '';
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: 10px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--accent-gradient);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.22s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent-purple);
+    box-shadow: 0 14px 28px rgba(125, 113, 216, 0.18);
+}
+
+.feature-card:hover::after {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.feature-icon {
+    font-size: 2.7rem;
+    margin-bottom: 1rem;
+    transition: transform 0.22s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.08);
+}
+
+.feature-card h3 {
+    margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
 .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
 .feature-card h3 { margin-bottom: 0.5rem; }
 .feature-card p { color: var(--text-secondary); font-size: 0.9rem; }

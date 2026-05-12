@@ -146,7 +146,14 @@
     </article>
 
     <div class="post-comments-full">
-        <h2 class="section-title">💬 Комментарии</h2>
+        <h2 class="section-title">
+    <span class="nav-icon">
+        <img src="{{ url_for('static', filename='images/icons/comment.png') }}" alt=""
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">💬</span>
+    </span>
+    Комментарии
+</h2>
         {% if current_user %}
         <div class="comment-form-wrap">
             <div class="comment-avatar-small">

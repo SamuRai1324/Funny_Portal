@@ -147,8 +147,14 @@
 
     <div class="post-actions">
         <button class="action-btn toggle-comments" data-post-id="{{ post.id }}">
-            💬 <span class="comment-count-{{ post.id }}">{{ post.comment_count or 0 }}</span>
-        </button>
+    <span class="nav-icon" style="width:18px;height:18px;">
+        <img src="{{ url_for('static', filename='images/icons/comment.png') }}" alt=""
+             style="width:18px;height:18px;filter:brightness(0.8);"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">💬</span>
+    </span>
+    <span class="comment-count-{{ post.id }}">{{ post.comment_count or 0 }}</span>
+</button>
         <a href="/post/{{ post.id }}" class="action-btn">📖 Открыть</a>
         {% if current_user %}
         <button class="action-btn share-post-btn" data-post-id="{{ post.id }}">📤 Поделиться</button>

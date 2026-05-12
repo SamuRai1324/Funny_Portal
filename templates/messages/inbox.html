@@ -50,7 +50,14 @@
     <div class="messages-global-chat">
         <div class="card chat-box-large">
             <div class="card-header">
-                <h3 class="card-title">🌐 Глобальный чат</h3>
+                <h3 class="card-title">
+    <span class="nav-icon">
+        <img src="{{ url_for('static', filename='images/icons/global_chat.png') }}" alt=""
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="emoji-fallback" style="display:none;">🌐</span>
+    </span>
+    Глобальный чат
+</h3>
             </div>
             <div class="chat-messages" id="global-chat-messages">
                 {% for msg in chat_messages %}
