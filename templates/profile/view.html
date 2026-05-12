@@ -12,15 +12,11 @@
         <div class="profile-avatar">
             {% if profile_user.avatar %}
             <img src="{{ url_for('uploaded_file', filename=profile_user.avatar) }}" alt="">
-            {% else %}
-            {{ profile_user.username[0]|upper }}
-            {% endif %}
+            {% else %}{{ profile_user.username[0]|upper }}{% endif %}
         </div>
         <div class="profile-details">
             <h1 class="profile-name">{{ profile_user.username }}</h1>
-            <p class="profile-username">
-                @{{ profile_user.username }} · На сайте с {{ profile_user.created_at[:10] }}
-            </p>
+            <p class="profile-username">@{{ profile_user.username }} · На сайте с {{ profile_user.created_at[:10] }}</p>
 
             {% if profile_user.bio %}
             <p class="profile-bio">{{ profile_user.bio }}</p>
@@ -62,9 +58,7 @@
 
 {% if active_stories %}
 <div class="card" style="margin-bottom: 1rem;">
-    <div class="card-header">
-        <h3 class="card-title">📖 Активные истории</h3>
-    </div>
+    <div class="card-header"><h3 class="card-title">📖 Активные истории</h3></div>
     <div class="stories-container" style="padding: 1rem;">
         {% for story in active_stories %}
         <a href="/story/{{ story.id }}" class="story-bubble">
@@ -83,16 +77,14 @@
 
 {% if archived_stories %}
 <div class="card" style="margin-bottom: 1rem;">
-    <div class="card-header">
-        <h3 class="card-title">📚 Архив историй</h3>
-    </div>
+    <div class="card-header"><h3 class="card-title">📚 Архив историй</h3></div>
     <div style="padding: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;">
         {% for story in archived_stories %}
         <div style="aspect-ratio: 1; background: var(--bg-tertiary); border-radius: var(--radius-md); overflow: hidden;">
             {% if story.file_path %}
-            <img src="{{ url_for('uploaded_file', filename=story.file_path) }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+            <img src="{{ url_for('uploaded_file', filename=story.file_path) }}" alt="" style="width:100%;height:100%;object-fit:cover;">
             {% else %}
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">📷</div>
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);">📷</div>
             {% endif %}
         </div>
         {% endfor %}
@@ -102,22 +94,18 @@
 
 {% if channels %}
 <div class="card" style="margin-bottom: 1rem;">
-    <div class="card-header">
-        <h3 class="card-title">📺 Каналы</h3>
-    </div>
+    <div class="card-header"><h3 class="card-title">📺 Каналы</h3></div>
     <div>
         {% for channel in channels %}
-        <a href="/channel/{{ channel.id }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); text-decoration: none; transition: var(--transition);">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; overflow: hidden; flex-shrink: 0;">
+        <a href="/channel/{{ channel.id }}" style="display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);text-decoration:none;transition:var(--transition);">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;font-size:1.25rem;overflow:hidden;flex-shrink:0;border:2px solid var(--border-color);">
                 {% if channel.avatar %}
-                <img src="{{ url_for('uploaded_file', filename=channel.avatar) }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-                {% else %}
-                📺
-                {% endif %}
+                <img src="{{ url_for('uploaded_file', filename=channel.avatar) }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+                {% else %}📺{% endif %}
             </div>
             <div>
-                <div style="font-weight: 600; color: var(--text-primary);">{{ channel.name }}</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">{{ channel.sub_count }} подписчиков</div>
+                <div style="font-weight:700;color:var(--text-primary);">{{ channel.name }}</div>
+                <div style="font-size:0.85rem;color:var(--text-muted);">{{ channel.sub_count }} подписчиков</div>
             </div>
         </a>
         {% endfor %}
@@ -217,7 +205,7 @@
                     <label class="form-label">Длительность</label>
                     <select name="duration" class="form-control">
                         <option value="1">1 час</option>
-                        <option value="24">24 часа</option>
+                        <option value="24" selected>24 часа</option>
                         <option value="168">7 дней</option>
                         <option value="720">30 дней</option>
                     </select>
@@ -240,37 +228,31 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const createModal = document.getElementById('create-profile-modal');
-    const openCreateBtn = document.getElementById('open-create-profile-modal');
-
+    var createModal = document.getElementById('create-profile-modal');
+    var openCreateBtn = document.getElementById('open-create-profile-modal');
     if (openCreateBtn && createModal) {
         openCreateBtn.addEventListener('click', function() {
             createModal.classList.add('active');
             document.body.style.overflow = 'hidden';
         });
-
-        createModal.querySelectorAll('.modal-close').forEach(btn => {
+        createModal.querySelectorAll('.modal-close').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 createModal.classList.remove('active');
                 document.body.style.overflow = '';
             });
         });
-
-        createModal.addEventListener('click', function(e) {
+        createModal.addEventListener('mousedown', function(e) {
             if (e.target === createModal) {
                 createModal.classList.remove('active');
                 document.body.style.overflow = '';
             }
         });
     }
-
-    const banTypeSelect = document.getElementById('ban-type-select');
+    var banTypeSelect = document.getElementById('ban-type-select');
     if (banTypeSelect) {
         banTypeSelect.addEventListener('change', function() {
-            const durationGroup = document.getElementById('duration-group');
-            if (durationGroup) {
-                durationGroup.style.display = this.value === 'permanent' ? 'none' : 'block';
-            }
+            var dg = document.getElementById('duration-group');
+            if (dg) dg.style.display = this.value === 'permanent' ? 'none' : 'block';
         });
     }
 });

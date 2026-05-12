@@ -3,18 +3,25 @@
 {% block title %}История от {{ story.username }}{% endblock %}
 {% block layout_class %}layout-centered{% endblock %}
 {% block sidebar %}{% endblock %}
+
 {% block content %}
 <div style="max-width:500px;margin:0 auto;">
-    <a href="/" class="back-link">← Назад</a>
+    <a href="/" class="back-link" style="display:inline-block;margin-bottom:1rem;color:var(--text-muted);font-weight:600;">← Назад</a>
     <div class="card" style="overflow:hidden;">
         <div style="display:flex;align-items:center;gap:0.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);">
             <a href="/profile/{{ story.username }}" style="width:44px;height:44px;border-radius:50%;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:var(--text-primary);border:2px solid var(--border-color);text-decoration:none;">
-                {% if story.avatar %}<img src="{{ url_for('uploaded_file', filename=story.avatar) }}" style="width:100%;height:100%;object-fit:cover;">{% else %}{{ story.username[0]|upper }}{% endif %}
+                {% if story.avatar %}
+                <img src="{{ url_for('uploaded_file', filename=story.avatar) }}" style="width:100%;height:100%;object-fit:cover;">
+                {% else %}{{ story.username[0]|upper }}{% endif %}
             </a>
             <div>
                 <a href="/profile/{{ story.username }}" style="font-weight:800;color:var(--text-primary);">{{ story.username }}</a>
                 <div style="font-size:0.78rem;color:var(--text-muted);" data-utc="{{ story.created_at }}">{{ story.created_at[:16] }}</div>
-                {% if story.story_expires_at %}<div style="font-size:0.72rem;color:var(--accent-purple);font-weight:600;">Исчезнет: {{ story.story_expires_at[:16] }}</div>{% endif %}
+                {% if story.story_expires_at %}
+                <div style="font-size:0.72rem;color:var(--accent-purple);font-weight:600;">
+                    Исчезнет: <span data-utc="{{ story.story_expires_at }}">{{ story.story_expires_at[:16] }}</span>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% if story.file_path %}
@@ -30,7 +37,9 @@
             {% endif %}
         {% endif %}
         {% if story.content %}
-        <div style="padding:1.25rem;"><p style="color:var(--text-secondary);line-height:1.7;">{{ story.content }}</p></div>
+        <div style="padding:1.25rem;">
+            <p style="color:var(--text-secondary);line-height:1.7;">{{ story.content }}</p>
+        </div>
         {% endif %}
         <div style="display:flex;gap:0.75rem;padding:1.25rem;border-top:1px solid var(--border-color);flex-wrap:wrap;">
             <a href="/profile/{{ story.username }}" class="btn btn-secondary">👤 Профиль</a>
@@ -38,5 +47,4 @@
         </div>
     </div>
 </div>
-<style>.back-link{color:var(--text-muted);font-size:0.9rem;font-weight:600;display:inline-block;margin-bottom:1rem;}.back-link:hover{color:var(--accent-green);}</style>
 {% endblock %}

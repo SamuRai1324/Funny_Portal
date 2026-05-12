@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+{% block title %}Админ-панель - Aura Nexus{% endblock %}
+
+{% block content %}
+<h1 class="page-title">⚙️ Панель управления</h1>
+
+<div class="admin-tabs">
+    <a href="/admin?tab=dashboard" class="tab {% if tab == 'dashboard' %}active{% endif %}">📊 Статистика</a>
+    <a href="/admin?tab=users" class="tab {% if tab == 'users' %}active{% endif %}">👥 Пользователи</a>
+    <a href="/admin?tab=reports" class="tab {% if tab == 'reports' %}active{% endif %}">
+        📋 Жалобы {% if stats.reports_pending > 0 %}<span class="badge badge-danger" style="margin-left:0.3rem;">{{ stats.reports_pending }}</span>{% endif %}
+    </a>
+    <a href="/admin?tab=analytics" class="tab {% if tab == 'analytics' %}active{% endif %}">📈 Аналитика</a>
+    <a href="/admin?tab=bans" class="tab {% if tab == 'bans' %}active{% endif %}">🚫 Баны</a>
+    {% if current_user.role == 'admin' %}
+    <a href="/admin?tab=logs" class="tab {% if tab == 'logs' %}active{% endif %}">📝 Логи</a>
+    {% endif %}
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+{% if tab == 'dashboard' %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.users }}</div>
+            <div class="stat-label">Пользователей</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.posts }}</div>
+            <div class="stat-label">Публикаций</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📺</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.channels }}</div>
+            <div class="stat-label">Каналов</div>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">📋</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.reports_pending }}</div>
+            <div class="stat-label">Жалоб</div>
+        </div>
+    </div>
+    <div class="stat-card stat-danger">
+        <div class="stat-icon">🚫</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.bans_active }}</div>
+            <div class="stat-label">Банов</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">👁</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_views }}</div>
+            <div class="stat-label">Просмотров</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">👥 Новые пользователи</h3>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr><th>Пользователь</th><th>Email</th><th>Роль</th><th>Дата</th></tr>
+            </thead>
+            <tbody>
+                {% for user in recent_users %}
+                <tr>
+                    <td><a href="/profile/{{ user.username }}">{{ user.username }}</a></td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge badge-{{ user.role }}">{{ user.role }}</span></td>
+                    <td><span data-utc="{{ user.created_at }}">{{ user.created_at[:10] }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-muted" style="text-align:center;">Нет данных</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ USERS ═══ -->
+{% if tab == 'users' %}
+<div class="card" style="margin-bottom:1rem;">
+    <div class="card-body">
+        <form method="GET" action="/admin" style="display:flex;gap:0.75rem;">
+            <input type="hidden" name="tab" value="users">
+            <input type="text" name="q" value="{{ search }}" placeholder="Поиск по имени или email..." class="form-control" style="flex:1;margin:0;">
+            <button type="submit" class="btn">Поиск</button>
+            {% if search %}
+            <a href="/admin?tab=users" class="btn btn-secondary">Сбросить</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Пользователь</th><th>Email</th><th>Роль</th><th>Статус</th><th>Дата</th><th>Действия</th></tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><a href="/profile/{{ user.username }}">{{ user.username }}</a></td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if current_user.role == 'admin' and user.id != current_user.id %}
+                        <form method="POST" action="/admin/users/{{ user.id }}/role" style="margin:0;">
+                            <select name="role" class="form-control" style="padding:0.3rem;min-width:100px;margin:0;" onchange="this.form.submit()">
+                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                <option value="moderator" {% if user.role == 'moderator' %}selected{% endif %}>Moderator</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                        </form>
+                        {% else %}
+                        <span class="badge badge-{{ user.role }}">{{ user.role }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_banned %}
+                        <span class="badge badge-danger">Забанен</span>
+                        {% else %}
+                        <span class="badge badge-success">Активен</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at[:10] }}</td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem;">
+                            {% if not user.is_banned and user.id != current_user.id %}
+                            <button class="btn btn-sm btn-outline" data-modal="ban-modal-{{ user.id }}">Бан</button>
+                            {% elif user.is_banned %}
+                            <form method="POST" action="/admin/users/{{ user.id }}/unban" class="inline-form">
+                                <button type="submit" class="btn btn-sm btn-success">Разбан</button>
+                            </form>
+                            {% endif %}
+                            {% if user.role != 'admin' and current_user.role == 'admin' and user.id != current_user.id %}
+                            <form method="POST" action="/admin/users/{{ user.id }}/delete" class="inline-form">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить {{ user.username }}?')">Удалить</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-muted" style="text-align:center;">Нет данных</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Ban modals -->
+{% for user in users %}
+{% if not user.is_banned and user.role != 'admin' and user.id != current_user.id %}
+<div class="modal-overlay" id="ban-modal-{{ user.id }}">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">🚫 Забанить {{ user.username }}</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form method="POST" action="/admin/users/{{ user.id }}/ban">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Тип бана</label>
+                    <select name="ban_type" class="form-control ban-type-sel" data-uid="{{ user.id }}">
+                        <option value="temporary">Временный</option>
+                        {% if current_user.role == 'admin' %}
+                        <option value="permanent">Перманентный</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="form-group" id="dur-group-{{ user.id }}">
+                    <label class="form-label">Длительность</label>
+                    <select name="duration" class="form-control">
+                        <option value="1">1 час</option>
+                        <option value="24" selected>24 часа</option>
+                        <option value="168">7 дней</option>
+                        <option value="720">30 дней</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Причина</label>
+                    <textarea name="reason" class="form-control" placeholder="Причина бана"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+                <button type="submit" class="btn btn-danger">Забанить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<!-- ═══ REPORTS ═══ -->
+{% if tab == 'reports' %}
+<div class="tabs" style="margin-bottom:1rem;">
+    <a href="/admin?tab=reports&status=pending" class="tab {% if current_status == 'pending' %}active{% endif %}">Ожидают</a>
+    <a href="/admin?tab=reports&status=approved" class="tab {% if current_status == 'approved' %}active{% endif %}">Одобренные</a>
+    <a href="/admin?tab=reports&status=rejected" class="tab {% if current_status == 'rejected' %}active{% endif %}">Отклонённые</a>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Отправитель</th><th>Тип</th><th>Категория</th><th>Описание</th><th>Дата</th>
+                {% if current_status == 'pending' %}<th>Действия</th>{% endif %}</tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.id }}</td>
+                    <td><a href="/profile/{{ report.reporter_name }}">{{ report.reporter_name }}</a></td>
+                    <td>
+                        {% if report.post_id %}<span class="badge badge-info">Пост</span>
+                        {% elif report.comment_id %}<span class="badge badge-warning">Комментарий</span>
+                        {% elif report.user_id %}<span class="badge badge-purple">Пользователь</span>{% endif %}
+                    </td>
+                    <td><span class="badge">{{ report.category }}</span></td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ report.description or 'Без описания' }}</td>
+                    <td>{{ report.created_at[:16] }}</td>
+                    {% if current_status == 'pending' %}
+                    <td>
+                        <div style="display:flex;gap:0.4rem;">
+                            <form method="POST" action="/admin/reports/{{ report.id }}/handle" class="inline-form">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-sm btn-success" title="Одобрить">✓</button>
+                            </form>
+                            <form method="POST" action="/admin/reports/{{ report.id }}/handle" class="inline-form">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Отклонить">✕</button>
+                            </form>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr><td colspan="{% if current_status == 'pending' %}7{% else %}6{% endif %}" class="text-muted" style="text-align:center;">Жалоб нет</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ ANALYTICS ═══ -->
+{% if tab == 'analytics' %}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:1.5rem;">
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">🔥 Популярные посты</h3></div>
+        <div class="card-body" style="padding:0;">
+            <table class="table">
+                <thead><tr><th>Автор</th><th>Заголовок</th><th>👁</th><th>👍</th><th>💬</th></tr></thead>
+                <tbody>
+                    {% for post in top_posts %}
+                    <tr>
+                        <td><a href="/profile/{{ post.username }}">{{ post.username }}</a></td>
+                        <td><a href="/post/{{ post.id }}">{{ post.title or post.content[:30] or '—' }}</a></td>
+                        <td>{{ post.view_count or 0 }}</td>
+                        <td>{{ post.reaction_count or 0 }}</td>
+                        <td>{{ post.comment_count or 0 }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted" style="text-align:center;">Нет данных</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">👤 Топ авторов</h3></div>
+        <div class="card-body" style="padding:0;">
+            <table class="table">
+                <thead><tr><th>Пользователь</th><th>Постов</th><th>Просмотров</th></tr></thead>
+                <tbody>
+                    {% for u in top_users %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div style="width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;overflow:hidden;border:2px solid var(--border-color);">
+                                    {% if u.avatar %}<img src="{{ url_for('uploaded_file', filename=u.avatar) }}" style="width:100%;height:100%;object-fit:cover;">
+                                    {% else %}{{ u.username[0]|upper }}{% endif %}
+                                </div>
+                                <a href="/profile/{{ u.username }}">{{ u.username }}</a>
+                            </div>
+                        </td>
+                        <td>{{ u.post_count }}</td>
+                        <td>{{ u.total_views }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-muted" style="text-align:center;">Нет данных</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ BANS ═══ -->
+{% if tab == 'bans' %}
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr><th>Пользователь</th><th>Забанил</th><th>Тип</th><th>Причина</th><th>До</th><th>Дата</th></tr>
+            </thead>
+            <tbody>
+                {% for ban in bans %}
+                <tr>
+                    <td><a href="/profile/{{ ban.banned_username }}">{{ ban.banned_username }}</a></td>
+                    <td><a href="/profile/{{ ban.admin_username }}">{{ ban.admin_username }}</a></td>
+                    <td>
+                        {% if ban.is_permanent %}<span class="badge badge-danger">Перманентный</span>
+                        {% else %}<span class="badge badge-warning">Временный</span>{% endif %}
+                    </td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ban.reason or '—' }}</td>
+                    <td>{{ ban.ban_until[:16] if ban.ban_until else '—' }}</td>
+                    <td>{{ ban.created_at[:16] }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-muted" style="text-align:center;">Банов нет</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ LOGS ═══ -->
+{% if tab == 'logs' %}
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Админ</th><th>Действие</th><th>Тип</th><th>ID</th><th>Детали</th><th>Дата</th></tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td><a href="/profile/{{ log.admin_username }}">{{ log.admin_username }}</a></td>
+                    <td><span class="badge">{{ log.action }}</span></td>
+                    <td>{{ log.target_type or '—' }}</td>
+                    <td>{{ log.target_id or '—' }}</td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.details or '—' }}</td>
+                    <td>{{ log.created_at[:16] }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-muted" style="text-align:center;">Логов нет</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+.stat-card.stat-warning { border-color: var(--warning); background: rgba(158,106,3,0.08); }
+.stat-card.stat-danger { border-color: var(--danger); background: rgba(218,54,51,0.08); }
+.stat-icon { font-size: 2rem; }
+.stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem; }
+.badge-user { background: rgba(139,148,158,0.2); color: var(--text-secondary); }
+.badge-moderator { background: rgba(31,111,235,0.2); color: #58a6ff; }
+.badge-admin { background: rgba(124,58,237,0.2); color: #a78bfa; }
+
+@media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.ban-type-sel').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+        var uid = this.dataset.uid;
+        var dg = document.getElementById('dur-group-' + uid);
+        if (dg) dg.style.display = this.value === 'permanent' ? 'none' : 'block';
+    });
+});
+</script>
+{% endblock %}

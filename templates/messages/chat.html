@@ -31,6 +31,31 @@
                             {% else %}{{ msg.username[0]|upper }}{% endif %}
                         </div>
                         <div class="private-message-bubble">
+                            {% if msg.shared_post %}
+                            <a href="/post/{{ msg.shared_post.id }}" class="shared-post-card">
+<<<<<<< Updated upstream
+                                <span class="shared-post-badge">📎 Пост</span>
+                                <span class="shared-post-title">{{ msg.shared_post.title or 'Без названия' }}</span>
+                                <span class="shared-post-author">от @{{ msg.shared_post.username }}</span>
+=======
+                                <div class="shared-post-inner">
+                                    <span class="shared-post-badge">📎 {{ msg.shared_post.post_type|default('Пост') }}</span>
+                                    <span class="shared-post-title">{{ msg.shared_post.title or 'Без названия' }}</span>
+                                    <span class="shared-post-author">@{{ msg.shared_post.username }}</span>
+                                    {% if msg.shared_post.file_path %}
+                                    <div class="shared-post-thumb">
+                                        {% set ext = msg.shared_post.file_path.rsplit('.', 1)[-1].lower() %}
+                                        {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                                        <img src="{{ url_for('uploaded_file', filename=msg.shared_post.file_path) }}" alt="">
+                                        {% elif ext in ['mp4', 'webm', 'mov'] %}
+                                        <div class="shared-post-video-icon">▶</div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+>>>>>>> Stashed changes
+                            </a>
+                            {% endif %}
                             {% if msg.file_path %}
                                 {% if msg.file_type == 'photo' %}
                                 <img src="{{ url_for('uploaded_file', filename=msg.file_path) }}" alt="" class="msg-media-img">
@@ -55,11 +80,14 @@
                 </div>
 
                 <form id="private-message-form" method="POST" enctype="multipart/form-data" class="private-message-form">
-                    <button type="button" class="msg-attach-btn" id="attach-media-btn" title="Прикрепить">
-                        📎
-                    </button>
+                    <div class="msg-attach-group">
+                        <button type="button" class="msg-attach-btn" id="attach-media-btn" title="Прикрепить файл">📎</button>
+                        <button type="button" class="msg-attach-btn" id="share-post-in-chat-btn" title="Отправить ссылку на пост">🔗</button>
+                    </div>
                     <input type="file" name="media" id="msg-media-input" accept="image/*,video/*,audio/*" style="display: none;">
+                    <input type="hidden" name="shared_post_id" id="shared-post-id">
                     <div id="msg-media-preview" class="msg-media-preview" style="display: none;"></div>
+                    <div id="msg-shared-preview" class="msg-shared-preview" style="display: none;"></div>
                     <input type="text" name="content" placeholder="Сообщение..." class="form-control message-input" autocomplete="off">
                     <button type="submit" class="btn send-btn">➤</button>
                 </form>
@@ -98,169 +126,115 @@
 
 <style>
 .chat-page { max-width: 1200px; margin: 0 auto; }
-
-.chat-header-bar {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-}
-
+.back-link { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+.back-link:hover { color: var(--accent-green); }
+.chat-header-bar { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; }
 .chat-user-info { display: flex; align-items: center; gap: 0.75rem; }
-
 .chat-user-avatar {
-    width: 42px; height: 42px; border-radius: 50%;
-    background: var(--bg-tertiary);
+    width: 42px; height: 42px; border-radius: 50%; background: var(--bg-tertiary);
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; font-weight: 700; color: var(--text-primary);
-    border: 2px solid var(--border-color);
+    overflow: hidden; font-weight: 700; color: var(--text-primary); border: 2px solid var(--border-color);
 }
 .chat-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .chat-user-name { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); }
 .chat-user-name:hover { color: var(--accent-green); }
-
-.chat-page-layout {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 1.5rem;
-}
-
-.chat-private-section,
-.chat-global-section { min-width: 0; }
-
-.chat-container {
-    height: 520px;
-    display: flex;
-    flex-direction: column;
-}
-
+.chat-page-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; }
+.chat-private-section, .chat-global-section { min-width: 0; }
+.chat-container { height: 520px; display: flex; flex-direction: column; }
 .private-messages-list {
     flex: 1; overflow-y: auto; padding: 1rem;
     display: flex; flex-direction: column; gap: 0.75rem;
 }
-
 .private-message { display: flex; gap: 0.75rem; }
 .private-message.own-message { flex-direction: row-reverse; }
-
 .private-message-avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--bg-tertiary);
+    width: 34px; height: 34px; border-radius: 50%; background: var(--bg-tertiary);
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; flex-shrink: 0; overflow: hidden;
-    font-weight: 700; color: var(--text-primary);
-    border: 2px solid var(--border-color);
+    font-weight: 700; color: var(--text-primary); border: 2px solid var(--border-color);
 }
 .private-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
 .private-message-bubble {
     max-width: 70%; padding: 0.65rem 0.875rem;
-    border-radius: 16px; background: var(--bg-tertiary);
-    border-bottom-left-radius: 4px;
+    border-radius: 16px; background: var(--bg-tertiary); border-bottom-left-radius: 4px;
 }
 .own-message .private-message-bubble {
-    background: var(--accent-purple);
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 4px;
+    background: var(--accent-purple); border-bottom-left-radius: 16px; border-bottom-right-radius: 4px;
 }
 .private-message-text { font-size: 0.9rem; word-break: break-word; color: var(--text-primary); }
 .private-message-time { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.2rem; text-align: right; }
 .own-message .private-message-time { color: rgba(255,255,255,0.55); }
-
 .msg-media-img { max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 0.4rem; display: block; }
 .msg-media-video { max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 0.4rem; display: block; }
 .msg-media-audio { width: 100%; margin-bottom: 0.4rem; }
 
-.chat-empty {
-    flex: 1; display: flex; flex-direction: column; justify-content: center;
+.shared-post-card {
+    display: flex; flex-direction: column; gap: 0.2rem;
+    padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.15); border-radius: var(--radius-md);
+    margin-bottom: 0.4rem; text-decoration: none; border-left: 3px solid var(--accent-green);
 }
+.shared-post-badge { font-size: 0.7rem; color: var(--accent-green); font-weight: 700; }
+.shared-post-title { font-size: 0.85rem; color: var(--text-primary); font-weight: 700; }
+.shared-post-author { font-size: 0.72rem; color: var(--text-muted); }
+.own-message .shared-post-card { background: rgba(0,0,0,0.2); }
 
+.chat-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .private-message-form {
-    padding: 0.875rem;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
+    padding: 0.875rem; border-top: 1px solid var(--border-color);
+    display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
 }
-
+.msg-attach-group { display: flex; gap: 0.25rem; }
 .msg-attach-btn {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    font-size: 1.15rem;
-    cursor: pointer;
+    width: 38px; height: 38px; border-radius: 50%; background: var(--bg-tertiary);
+    border: 1px solid var(--border-color); font-size: 1.15rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: var(--transition);
-    flex-shrink: 0;
+    transition: var(--transition); flex-shrink: 0;
 }
 .msg-attach-btn:hover { background: var(--border-color); }
-
-.msg-media-preview {
-    width: 100%;
-    padding: 0.5rem;
-    background: var(--bg-primary);
-    border-radius: var(--radius-md);
-    margin-bottom: 0.25rem;
+.msg-media-preview, .msg-shared-preview {
+    width: 100%; padding: 0.5rem; background: var(--bg-primary);
+    border-radius: var(--radius-md); margin-bottom: 0.25rem;
 }
-.msg-media-preview img,
-.msg-media-preview video {
-    max-width: 100%;
-    max-height: 120px;
-    border-radius: var(--radius-sm);
-}
-
+.msg-media-preview img, .msg-media-preview video { max-width: 100%; max-height: 120px; border-radius: var(--radius-sm); }
 .message-input { margin: 0; border-radius: 20px; flex: 1; }
 .send-btn { border-radius: 20px; padding: 0 1.25rem; flex-shrink: 0; }
 
-.chat-box-large {
-    display: flex; flex-direction: column; height: 520px;
-}
+.chat-box-large { display: flex; flex-direction: column; height: 520px; }
 .chat-box-large .chat-messages {
     flex: 1; overflow-y: auto; padding: 0.875rem;
     display: flex; flex-direction: column; gap: 0.65rem;
 }
 .chat-box-large .chat-message { display: flex; gap: 0.65rem; }
 .chat-box-large .chat-message-avatar {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: var(--bg-tertiary);
+    width: 30px; height: 30px; border-radius: 50%; background: var(--bg-tertiary);
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.78rem; font-weight: 700;
-    flex-shrink: 0; overflow: hidden; color: var(--text-primary);
-    border: 2px solid var(--border-color);
+    font-size: 0.78rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
+    color: var(--text-primary); border: 2px solid var(--border-color);
 }
 .chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .chat-box-large .chat-message-content { flex: 1; min-width: 0; }
 .chat-box-large .chat-message-author { font-size: 0.78rem; font-weight: 700; color: var(--accent-green); display: block; }
 .chat-box-large .chat-message-text { font-size: 0.875rem; color: var(--text-primary); word-break: break-word; }
-
 .chat-box-large .chat-input {
-    display: flex; gap: 0.4rem; padding: 0.875rem;
-    border-top: 1px solid var(--border-color);
+    display: flex; gap: 0.4rem; padding: 0.875rem; border-top: 1px solid var(--border-color);
 }
 .chat-box-large .chat-input input {
-    flex: 1; background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: 0.55rem 0.875rem;
-    color: var(--text-primary); font-size: 0.85rem;
-    font-family: var(--font-family);
+    flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    border-radius: var(--radius-full); padding: 0.55rem 0.875rem;
+    color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-family);
 }
 .chat-box-large .chat-input input:focus { outline: none; border-color: var(--accent-purple); }
 .chat-box-large .chat-input button {
     width: 36px; height: 36px; border-radius: 50%;
-    background: var(--accent-gradient);
-    border: none; color: white; cursor: pointer;
-    transition: var(--transition);
-    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-gradient); border: none; color: white; cursor: pointer;
+    transition: var(--transition); display: flex; align-items: center; justify-content: center;
     font-size: 1rem; flex-shrink: 0;
 }
 .chat-box-large .chat-input button:hover { transform: scale(1.1); }
 
 @media (max-width: 900px) {
     .chat-page-layout { grid-template-columns: 1fr; }
-    .chat-container,
-    .chat-box-large { height: 400px; }
+    .chat-container, .chat-box-large { height: 400px; }
 }
 </style>
 {% endblock %}
@@ -268,59 +242,72 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // скролл вниз
     var pm = document.getElementById('private-messages');
     if (pm) pm.scrollTop = pm.scrollHeight;
-
     var gm = document.getElementById('global-chat-messages');
     if (gm) gm.scrollTop = gm.scrollHeight;
 
+    // прикрепить файл
     var attachBtn = document.getElementById('attach-media-btn');
     var mediaInput = document.getElementById('msg-media-input');
     var mediaPreview = document.getElementById('msg-media-preview');
 
     if (attachBtn && mediaInput) {
-        attachBtn.addEventListener('click', function() {
-            mediaInput.click();
-        });
-
+        attachBtn.addEventListener('click', function() { mediaInput.click(); });
         mediaInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                var file = this.files[0];
+            if (!this.files || !this.files[0]) return;
+            var file = this.files[0];
+            mediaPreview.innerHTML = '';
+            mediaPreview.style.display = 'block';
+            if (file.type.startsWith('image/')) {
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                mediaPreview.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                var video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.controls = true;
+                mediaPreview.appendChild(video);
+            } else if (file.type.startsWith('audio/')) {
+                var audio = document.createElement('audio');
+                audio.src = URL.createObjectURL(file);
+                audio.controls = true;
+                audio.style.width = '100%';
+                mediaPreview.appendChild(audio);
+            } else {
+                mediaPreview.innerHTML = '<p style="color:var(--text-muted);">' + file.name + '</p>';
+            }
+            var removeBtn = document.createElement('button');
+            removeBtn.textContent = '✕ Убрать';
+            removeBtn.style.cssText = 'margin-top:0.4rem;background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.25rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.78rem;';
+            removeBtn.addEventListener('click', function() {
+                mediaInput.value = '';
                 mediaPreview.innerHTML = '';
-                mediaPreview.style.display = 'block';
+                mediaPreview.style.display = 'none';
+            });
+            mediaPreview.appendChild(removeBtn);
+        });
+    }
 
-                if (file.type.startsWith('image/')) {
-                    var img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
-                    mediaPreview.appendChild(img);
-                } else if (file.type.startsWith('video/')) {
-                    var video = document.createElement('video');
-                    video.src = URL.createObjectURL(file);
-                    video.controls = true;
-                    mediaPreview.appendChild(video);
-                } else if (file.type.startsWith('audio/')) {
-                    var audio = document.createElement('audio');
-                    audio.src = URL.createObjectURL(file);
-                    audio.controls = true;
-                    audio.style.width = '100%';
-                    mediaPreview.appendChild(audio);
-                } else {
-                    mediaPreview.innerHTML = '<p style="color:var(--text-muted);">' + file.name + '</p>';
-                }
-
-                var removeBtn = document.createElement('button');
-                removeBtn.textContent = '✕ Убрать';
-                removeBtn.style.cssText = 'margin-top:0.4rem;background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.25rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.78rem;';
-                removeBtn.addEventListener('click', function() {
-                    mediaInput.value = '';
-                    mediaPreview.innerHTML = '';
-                    mediaPreview.style.display = 'none';
-                });
-                mediaPreview.appendChild(removeBtn);
+    // поделиться ссылкой на пост
+    var sharePostBtn = document.getElementById('share-post-in-chat-btn');
+    if (sharePostBtn) {
+        sharePostBtn.addEventListener('click', function() {
+            var postId = prompt('Введите ID поста:');
+            if (!postId || isNaN(postId)) return;
+            var hiddenInput = document.getElementById('shared-post-id');
+            var sharedPreview = document.getElementById('msg-shared-preview');
+            if (hiddenInput) hiddenInput.value = postId;
+            if (sharedPreview) {
+                sharedPreview.style.display = 'block';
+                sharedPreview.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;"><span>🔗 Пост #' + postId + '</span>' +
+                    '<button type="button" onclick="this.closest(\'.msg-shared-preview\').style.display=\'none\';document.getElementById(\'shared-post-id\').value=\'\';" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.15rem 0.4rem;border-radius:4px;cursor:pointer;font-size:0.75rem;">✕</button></div>';
             }
         });
     }
 
+    // локальное время
     document.querySelectorAll('.private-message-time[data-utc]').forEach(function(el) {
         var utcStr = el.getAttribute('data-utc');
         if (!utcStr) return;

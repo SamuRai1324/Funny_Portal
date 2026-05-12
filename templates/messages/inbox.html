@@ -31,9 +31,7 @@
                     </div>
                     <div class="conversation-info">
                         <div class="conversation-name">{{ conv.other_username }}</div>
-                        <div class="conversation-preview">
-                            {{ conv.last_message or 'Нет сообщений' }}
-                        </div>
+                        <div class="conversation-preview">{{ conv.last_message or 'Нет сообщений' }}</div>
                     </div>
                 </a>
                 {% endfor %}
@@ -43,9 +41,7 @@
                 <div class="empty-state-icon">💬</div>
                 <h3 class="empty-state-title">Диалогов пока нет</h3>
                 <p>Напишите кому-нибудь первым!</p>
-                <button class="btn" style="margin-top: 1rem;" id="open-new-dialog-modal-2">
-                    + Начать диалог
-                </button>
+                <button class="btn" style="margin-top: 1rem;" id="open-new-dialog-modal-2">+ Начать диалог</button>
             </div>
             {% endif %}
         </div>
@@ -62,9 +58,7 @@
                     <div class="chat-message-avatar">
                         {% if msg.avatar %}
                         <img src="{{ url_for('uploaded_file', filename=msg.avatar) }}" alt="">
-                        {% else %}
-                        {{ msg.username[0]|upper }}
-                        {% endif %}
+                        {% else %}{{ msg.username[0]|upper }}{% endif %}
                     </div>
                     <div class="chat-message-content">
                         <a href="/profile/{{ msg.username }}" class="chat-message-author">{{ msg.username }}</a>
@@ -72,9 +66,7 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="empty-state" style="padding: 2rem;">
-                    <p>Сообщений пока нет</p>
-                </div>
+                <div class="empty-state" style="padding: 2rem;"><p>Сообщений пока нет</p></div>
                 {% endfor %}
             </div>
             <div id="chat-cooldown" style="display: none; padding: 0.5rem 1rem; text-align: center; color: var(--warning); font-size: 0.85rem;"></div>
@@ -86,6 +78,7 @@
     </div>
 </div>
 
+<!-- Модалка нового диалога -->
 <div class="modal-overlay" id="new-dialog-modal">
     <div class="modal">
         <div class="modal-header">
@@ -95,7 +88,7 @@
         <div class="modal-body">
             <div class="form-group">
                 <label class="form-label">Поиск пользователя</label>
-                <input type="text" id="user-search-input" class="form-control" placeholder="Введите имя пользователя...">
+                <input type="text" id="user-search-input" class="form-control" placeholder="Введите имя (мин. 2 символа)..." autocomplete="off">
             </div>
             <div id="user-search-results" class="user-search-results"></div>
         </div>
@@ -108,283 +101,169 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
 }
-
-.messages-conversations { min-width: 0; }
-.messages-global-chat { min-width: 0; }
-
-.conversations-list {
-    max-height: 520px;
-    overflow-y: auto;
-}
-
+.messages-conversations, .messages-global-chat { min-width: 0; }
+.conversations-list { max-height: 520px; overflow-y: auto; }
 .conversation-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color);
-    text-decoration: none;
-    transition: var(--transition);
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+    text-decoration: none; transition: var(--transition);
 }
-
 .conversation-item:last-child { border-bottom: none; }
 .conversation-item:hover { background: var(--bg-tertiary); }
 .conversation-item.unread { background: var(--accent-purple-alpha); }
-
 .conversation-avatar-wrap { position: relative; }
-
 .conversation-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 1.25rem;
-    overflow: hidden;
-    color: var(--text-primary);
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.25rem; overflow: hidden; color: var(--text-primary);
+    border: 2px solid var(--border-color);
 }
-
 .conversation-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
 .unread-badge {
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    background: var(--danger);
-    color: white;
-    font-size: 0.7rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 10px;
-    min-width: 18px;
-    text-align: center;
+    position: absolute; top: -2px; right: -2px;
+    background: var(--danger); color: white; font-size: 0.7rem;
+    padding: 0.1rem 0.4rem; border-radius: 10px; min-width: 18px; text-align: center;
 }
-
 .conversation-info { flex: 1; min-width: 0; }
-
-.conversation-name {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
+.conversation-name { font-weight: 700; color: var(--text-primary); }
 .conversation-preview {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.88rem; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.chat-box-large {
-    display: flex;
-    flex-direction: column;
-    height: 580px;
-}
-
+.chat-box-large { display: flex; flex-direction: column; height: 580px; }
 .chat-box-large .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex: 1; overflow-y: auto; padding: 1rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
 }
-
-.chat-box-large .chat-message {
-    display: flex;
-    gap: 0.75rem;
-}
-
+.chat-box-large .chat-message { display: flex; gap: 0.75rem; }
 .chat-box-large .chat-message-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 600;
-    flex-shrink: 0;
-    overflow: hidden;
-    color: var(--text-primary);
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
+    color: var(--text-primary); border: 2px solid var(--border-color);
 }
-
 .chat-box-large .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .chat-box-large .chat-message-content { flex: 1; min-width: 0; }
-.chat-box-large .chat-message-author { font-size: 0.85rem; font-weight: 600; color: var(--accent-green); display: block; }
+.chat-box-large .chat-message-author { font-size: 0.85rem; font-weight: 700; color: var(--accent-green); display: block; }
 .chat-box-large .chat-message-text { font-size: 0.95rem; color: var(--text-primary); word-break: break-word; }
-
 .chat-box-large .chat-input {
-    display: flex;
-    gap: 0.5rem;
-    padding: 1rem;
-    border-top: 1px solid var(--border-color);
+    display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border-color);
 }
-
 .chat-box-large .chat-input input {
-    flex: 1;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: 0.75rem 1rem;
-    color: var(--text-primary);
-    font-size: 0.95rem;
+    flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    border-radius: var(--radius-full); padding: 0.75rem 1rem;
+    color: var(--text-primary); font-size: 0.95rem; font-family: var(--font-family);
 }
-
-.chat-box-large .chat-input input:focus {
-    outline: none;
-    border-color: var(--accent-purple);
-}
-
+.chat-box-large .chat-input input:focus { outline: none; border-color: var(--accent-purple); }
 .chat-box-large .chat-input button {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--accent-gradient);
-    border: none;
-    color: white;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent-gradient); border: none; color: white; cursor: pointer;
+    transition: var(--transition); display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
 }
-
-.chat-box-large .chat-input button:hover {
-    transform: scale(1.1);
-    box-shadow: var(--shadow-glow-green);
-}
+.chat-box-large .chat-input button:hover { transform: scale(1.1); box-shadow: var(--shadow-glow-green); }
 
 .user-search-results {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 0.5rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    max-height: 300px; overflow-y: auto; margin-top: 0.5rem;
 }
-
 .user-search-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: var(--transition);
-    text-decoration: none;
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; background: var(--bg-tertiary);
+    border-radius: var(--radius-md); cursor: pointer;
+    transition: var(--transition); text-decoration: none;
 }
-
-.user-search-item:hover {
-    background: var(--border-color);
-    border-color: var(--accent-green);
-}
-
+.user-search-item:hover { background: var(--border-color); }
 .user-search-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    overflow: hidden;
-    flex-shrink: 0;
-    color: var(--text-primary);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; overflow: hidden; flex-shrink: 0;
+    color: var(--text-primary); border: 2px solid var(--border-color);
 }
-
 .user-search-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.user-search-name {
-    font-weight: 600;
-    color: var(--text-primary);
-}
+.user-search-name { font-weight: 700; color: var(--text-primary); }
 
 @media (max-width: 900px) {
     .messages-layout { grid-template-columns: 1fr; }
     .chat-box-large { height: 400px; }
 }
 </style>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('new-dialog-modal');
-    const openBtns = [
+    var modal = document.getElementById('new-dialog-modal');
+    var openBtns = [
         document.getElementById('open-new-dialog-modal'),
         document.getElementById('open-new-dialog-modal-2')
     ].filter(Boolean);
 
-    openBtns.forEach(btn => {
+    openBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            document.getElementById('user-search-input').focus();
+            var inp = document.getElementById('user-search-input');
+            if (inp) inp.focus();
         });
     });
 
-    modal.querySelectorAll('.modal-close').forEach(btn => {
+    // закрытие только по кнопке крестик, а не по mousedown
+    modal.querySelectorAll('.modal-close').forEach(function(btn) {
         btn.addEventListener('click', function() {
             modal.classList.remove('active');
             document.body.style.overflow = '';
         });
     });
 
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
+    // закрытие по клику на оверлей, но НЕ при перетаскивании выделения
+    var mouseDownTarget = null;
+    modal.addEventListener('mousedown', function(e) { mouseDownTarget = e.target; });
+    modal.addEventListener('mouseup', function(e) {
+        if (e.target === modal && mouseDownTarget === modal) {
             modal.classList.remove('active');
             document.body.style.overflow = '';
         }
+        mouseDownTarget = null;
     });
 
-    const searchInput = document.getElementById('user-search-input');
-    const resultsContainer = document.getElementById('user-search-results');
-    let searchTimeout = null;
+    var searchInput = document.getElementById('user-search-input');
+    var resultsContainer = document.getElementById('user-search-results');
+    var searchTimeout = null;
 
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const query = this.value.trim();
-
-        if (query.length < 1) {
-            resultsContainer.innerHTML = '';
-            return;
-        }
-
-        searchTimeout = setTimeout(async function() {
-            try {
-                const response = await fetch(`/api/search/users?q=${encodeURIComponent(query)}`);
-                if (response.ok) {
-                    const users = await response.json();
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            var query = this.value.trim();
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            searchTimeout = setTimeout(async function() {
+                try {
+                    var response = await fetch('/api/search/users?q=' + encodeURIComponent(query));
+                    if (!response.ok) return;
+                    var users = await response.json();
                     if (users.length === 0) {
-                        resultsContainer.innerHTML = '<p class="text-muted" style="padding: 0.5rem;">Пользователи не найдены</p>';
+                        resultsContainer.innerHTML = '<p class="text-muted" style="padding:0.5rem;">Пользователи не найдены</p>';
                         return;
                     }
-                    resultsContainer.innerHTML = users.map(u => `
-                        <a href="/messages/${u.id}" class="user-search-item">
-                            <div class="user-search-avatar">
-                                ${u.avatar
-                                    ? `<img src="/uploads/${u.avatar}" alt="">`
-                                    : u.username[0].toUpperCase()
-                                }
-                            </div>
-                            <div class="user-search-name">${u.username}</div>
-                        </a>
-                    `).join('');
+                    resultsContainer.innerHTML = users.map(function(u) {
+                        return '<a href="/messages/' + u.id + '" class="user-search-item">' +
+                            '<div class="user-search-avatar">' +
+                            (u.avatar
+                                ? '<img src="/uploads/' + u.avatar + '" alt="">'
+                                : u.username[0].toUpperCase()) +
+                            '</div>' +
+                            '<div class="user-search-name">' + u.username + '</div></a>';
+                    }).join('');
+                } catch (error) {
+                    console.error('User search error:', error);
                 }
-            } catch (error) {
-                console.error('User search error:', error);
-            }
-        }, 300);
-    });
+            }, 300);
+        });
+    }
 });
 </script>
 {% endblock %}

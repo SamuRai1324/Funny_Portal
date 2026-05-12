@@ -1,25 +1,29 @@
 {% extends 'base.html' %}
 {% block title %}История - Aura Nexus{% endblock %}
+
 {% block content %}
 <div style="max-width:500px;margin:0 auto;">
     <h1 class="page-title">⏱️ Создать историю</h1>
     <div class="card">
         <div class="card-body">
-            <div class="alert alert-info">Видна выбранное время, потом в архив.</div>
+            <div class="alert alert-info">История будет видна выбранное время, потом уйдёт в архив.</div>
             <form method="POST" action="/create/story" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label">Фото или видео</label>
                     <div class="file-upload">
                         <input type="file" name="media" accept="image/*,video/*">
                         <div class="file-upload-icon">📷</div>
-                        <div class="file-upload-text">Загрузить</div>
+                        <div class="file-upload-text">Загрузить медиа</div>
+                        <div class="file-upload-hint">Фото или видео</div>
                         <div class="file-preview"></div>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label class="form-label">Текст</label>
                     <textarea name="content" class="form-control" placeholder="Описание..." style="min-height:70px;"></textarea>
                 </div>
+
                 <div class="form-group">
                     <label class="form-label">Длительность</label>
                     <select name="duration" class="form-control">
@@ -31,7 +35,8 @@
                         <option value="48">48 часов</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-full">Опубликовать</button>
+
+                <button type="submit" class="btn btn-full">Опубликовать историю</button>
             </form>
         </div>
     </div>
