@@ -33,9 +33,27 @@
                         <div class="private-message-bubble">
                             {% if msg.shared_post %}
                             <a href="/post/{{ msg.shared_post.id }}" class="shared-post-card">
+<<<<<<< Updated upstream
                                 <span class="shared-post-badge">📎 Пост</span>
                                 <span class="shared-post-title">{{ msg.shared_post.title or 'Без названия' }}</span>
                                 <span class="shared-post-author">от @{{ msg.shared_post.username }}</span>
+=======
+                                <div class="shared-post-inner">
+                                    <span class="shared-post-badge">📎 {{ msg.shared_post.post_type|default('Пост') }}</span>
+                                    <span class="shared-post-title">{{ msg.shared_post.title or 'Без названия' }}</span>
+                                    <span class="shared-post-author">@{{ msg.shared_post.username }}</span>
+                                    {% if msg.shared_post.file_path %}
+                                    <div class="shared-post-thumb">
+                                        {% set ext = msg.shared_post.file_path.rsplit('.', 1)[-1].lower() %}
+                                        {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                                        <img src="{{ url_for('uploaded_file', filename=msg.shared_post.file_path) }}" alt="">
+                                        {% elif ext in ['mp4', 'webm', 'mov'] %}
+                                        <div class="shared-post-video-icon">▶</div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+>>>>>>> Stashed changes
                             </a>
                             {% endif %}
                             {% if msg.file_path %}
@@ -224,6 +242,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // скролл вниз
     var pm = document.getElementById('private-messages');
     if (pm) pm.scrollTop = pm.scrollHeight;
     var gm = document.getElementById('global-chat-messages');

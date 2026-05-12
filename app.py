@@ -42,6 +42,7 @@ def init_db():
             avatar TEXT,
             banner TEXT,
             bio TEXT,
+            birth_date TEXT,
             theme TEXT DEFAULT 'dark',
             custom_bg TEXT,
             custom_secondary TEXT,
@@ -262,6 +263,20 @@ def get_current_user():
     return user
 
 
+def is_user_adult(user):
+    if not user:
+        return False
+    try:
+        bd = user['birth_date']
+        if not bd:
+            return False
+        born = datetime.strptime(bd, '%Y-%m-%d')
+        age = (datetime.now() - born).days // 365
+        return age >= 18
+    except:
+        return False
+
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -295,7 +310,7 @@ def role_required(min_role):
 def add_notification(user_id, notif_type, content, link=None):
     conn = get_db()
     conn.execute('INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)',
-                 (user_id, notif_type, content, link))
+                (user_id, notif_type, content, link))
     conn.commit()
 
 
@@ -308,7 +323,7 @@ def log_admin_action(admin_id, action, target_type=None, target_id=None, details
     ).fetchone()
     if not existing:
         conn.execute('INSERT INTO admin_logs (admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?)',
-                     (admin_id, action, target_type, target_id, details))
+                    (admin_id, action, target_type, target_id, details))
         conn.commit()
 
 
@@ -382,9 +397,10 @@ def enrich_posts(posts, user, conn):
             (post['id'],)
         ).fetchall()
         p['reactions'] = {r['reaction_type']: r['count'] for r in reactions}
+        p['user_reaction'] = None
         if user:
             ur = conn.execute('SELECT reaction_type FROM reactions WHERE user_id = ? AND post_id = ?',
-                              (user['id'], post['id'])).fetchone()
+                            (user['id'], post['id'])).fetchone()
             p['user_reaction'] = ur['reaction_type'] if ur else None
         else:
             p['user_reaction'] = None
@@ -406,7 +422,7 @@ def record_view(post_id, user_id):
     try:
         conn.execute('INSERT OR IGNORE INTO post_views (post_id, user_id) VALUES (?, ?)', (post_id, user_id))
         conn.execute('UPDATE posts SET view_count = (SELECT COUNT(*) FROM post_views WHERE post_id = ?) WHERE id = ?',
-                     (post_id, post_id))
+                    (post_id, post_id))
         conn.commit()
     except:
         pass
@@ -423,7 +439,7 @@ def inject_globals():
     if user:
         try:
             theme = user['theme'] or 'dark'
-        except (IndexError, KeyError):
+        except:
             theme = 'dark'
         if theme == 'custom':
             try:
@@ -433,7 +449,7 @@ def inject_globals():
                     'custom_accent': user['custom_accent'] or '#7D71D8',
                     'custom_text': user['custom_text'] or '#f0f6fc',
                 }
-            except (IndexError, KeyError):
+            except:
                 theme = 'dark'
     marquee = get_marquee_items() if user else []
     return {
@@ -456,6 +472,7 @@ def index():
     current_tab = request.args.get('tab', 'all')
     search_query = request.args.get('q', '').strip()
     sort_by = request.args.get('sort', 'new')
+    post_type = request.args.get('type', 'all')
     conn = get_db()
 
     stories = []
@@ -479,9 +496,9 @@ def index():
 
     if current_tab == 'popular':
         q += ' ORDER BY p.view_count DESC, p.created_at DESC LIMIT 50'
-    elif current_tab == 'week':
+    elif sort_by == 'week':
         q += " AND p.created_at > datetime('now', '-7 days') ORDER BY p.view_count DESC LIMIT 50"
-    elif current_tab == 'month':
+    elif sort_by == 'month':
         q += " AND p.created_at > datetime('now', '-30 days') ORDER BY p.view_count DESC LIMIT 50"
     elif current_tab not in ('all',):
         q += ' AND p.post_type = ?'
@@ -583,8 +600,7 @@ def story_view(story_id):
     if not story:
         abort(404)
     user = get_current_user()
-    chat_messages = get_chat_messages() if user else []
-    return render_template('story_view.html', story=story, chat_messages=chat_messages)
+    return render_template('story_view.html', story=story, chat_messages=get_chat_messages() if user else [])
 
 
 @app.route('/search/users')
@@ -596,8 +612,8 @@ def search_users():
         users = conn.execute('SELECT id, username, avatar, bio FROM users WHERE username LIKE ? LIMIT 20',
                              (f'%{q}%',)).fetchall()
     user = get_current_user()
-    chat_messages = get_chat_messages() if user else []
-    return render_template('search_users.html', users=users, search_query=q, chat_messages=chat_messages)
+    return render_template('search_users.html', users=users, search_query=q,
+                           chat_messages=get_chat_messages() if user else [])
 
 
 @app.route('/api/search/users')
@@ -611,6 +627,24 @@ def api_search_users():
     return jsonify([{'id': u['id'], 'username': u['username'], 'avatar': u['avatar'], 'bio': u['bio']} for u in users])
 
 
+@app.route('/api/search/posts')
+@login_required
+def api_search_posts():
+    q = request.args.get('q', '').strip()
+    if not q or len(q) < 2:
+        return jsonify([])
+    posts = get_db().execute(
+        'SELECT p.id, p.title, p.post_type, p.file_path, u.username FROM posts p JOIN users u ON p.user_id = u.id '
+        'WHERE p.is_story = 0 AND (p.title LIKE ? OR p.content LIKE ?) LIMIT 10',
+        (f'%{q}%', f'%{q}%')
+    ).fetchall()
+    return jsonify([{
+        'id': p['id'], 'title': p['title'] or 'Без названия',
+        'post_type': POST_TYPE_LABELS.get(p['post_type'], p['post_type']),
+        'username': p['username'], 'file_path': p['file_path']
+    } for p in posts])
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if 'user_id' in session:
@@ -622,7 +656,8 @@ def register():
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm = request.form.get('confirm_password', '')
-        if not username or not email or not password:
+        birth_date = request.form.get('birth_date', '').strip()
+        if not username or not email or not password or not birth_date:
             flash('Заполните все поля', 'danger')
             return render_template('register.html')
         if len(username) < 3:
@@ -688,8 +723,8 @@ def logout():
 @app.route('/profile/<username>')
 def profile(username):
     conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-    if not user:
+    puser = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    if not puser:
         abort(404)
     posts = conn.execute(
         'SELECT p.*, u.username, u.avatar, c.name as channel_name, c.avatar as channel_avatar, '
@@ -824,9 +859,10 @@ def create_post():
             conn.execute('INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)',
                          (post_id, file_path, 'video'))
         conn.commit()
-        tags = extract_hashtags(content)
-        if tags:
-            save_hashtags(post_id, tags)
+        if content:
+            tags = extract_hashtags(content)
+            if tags:
+                save_hashtags(post_id, tags)
         flash('Пост опубликован!', 'success')
         return redirect(f'/post/{post_id}')
     channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
@@ -899,9 +935,10 @@ def create_photo():
             conn.execute('INSERT INTO post_files (post_id, file_path, file_type) VALUES (?, ?, ?)',
                          (post_id, path, 'photo'))
         conn.commit()
-        tags = extract_hashtags(content)
-        if tags:
-            save_hashtags(post_id, tags)
+        if content:
+            tags = extract_hashtags(content)
+            if tags:
+                save_hashtags(post_id, tags)
         flash('Фото опубликовано!', 'success')
         return redirect(f'/post/{post_id}')
     channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
@@ -932,9 +969,10 @@ def create_audio():
             'VALUES (?, ?, ?, ?, ?, ?, ?)',
             (user['id'], channel_id or None, 'audio', title or None, content, path, is_nsfw))
         conn.commit()
-        tags = extract_hashtags(content)
-        if tags:
-            save_hashtags(cursor.lastrowid, tags)
+        if content:
+            tags = extract_hashtags(content)
+            if tags:
+                save_hashtags(cursor.lastrowid, tags)
         flash('Аудио опубликовано!', 'success')
         return redirect(f'/post/{cursor.lastrowid}')
     channels = conn.execute('SELECT * FROM channels WHERE creator_id = ?', (user['id'],)).fetchall()
@@ -978,7 +1016,6 @@ def create_article():
 @login_required
 def create_story():
     user = get_current_user()
-    conn = get_db()
     if request.method == 'POST':
         content = request.form.get('content', '').strip()
         duration = max(1, min(48, int(request.form.get('duration', 24))))
@@ -993,7 +1030,7 @@ def create_story():
             'INSERT INTO posts (user_id, post_type, content, file_path, is_story, story_expires_at) '
             'VALUES (?, ?, ?, ?, 1, ?)',
             (user['id'], 'story', content, file_path, expires))
-        conn.commit()
+        get_db().commit()
         flash('История опубликована!', 'success')
         return redirect(f'/story/{cursor.lastrowid}')
     return render_template('create/story.html', chat_messages=get_chat_messages())
@@ -1440,7 +1477,7 @@ def get_chat_cooldown():
 @login_required
 def get_notifications_count():
     user = get_current_user()
-    return jsonify({'count': get_unread_notifications_count(user['id']) if user else 0})
+    return jsonify({'count': get_unread_notifications_count(user['id'])})
 
 
 @app.route('/api/notifications/read-all', methods=['POST'])
@@ -1675,10 +1712,10 @@ def admin_delete_post(post_id):
     post = conn.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
     if not post:
         flash('Не найден', 'danger')
-        return redirect(request.referrer or '/')
+        return redirect('/')
     if post['user_id'] != user['id'] and user['role'] not in ['admin', 'moderator']:
         flash('Недостаточно прав', 'danger')
-        return redirect(request.referrer or '/')
+        return redirect('/')
     for table in ['post_files', 'comments', 'reactions', 'post_views', 'post_hashtags']:
         conn.execute(f'DELETE FROM {table} WHERE post_id = ?', (post_id,))
     conn.execute('DELETE FROM posts WHERE id = ?', (post_id,))
@@ -1686,7 +1723,7 @@ def admin_delete_post(post_id):
     if user['role'] in ['admin', 'moderator'] and post['user_id'] != user['id']:
         log_admin_action(user['id'], 'delete_post', 'post', post_id)
     flash('Удалён', 'success')
-    return redirect(request.referrer or '/')
+    return redirect('/')
 
 
 @app.route('/admin/comments/<int:comment_id>/delete', methods=['POST'])

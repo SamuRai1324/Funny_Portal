@@ -10,3 +10,5 @@ __pycache__/
 *.log
 .env
 Web_DB.db
+.idea
+uploads/

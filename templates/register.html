@@ -8,26 +8,20 @@
 </head>
 <body>
     <nav>
-    <a href="/" class="logo">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image">
-        <span>Aura Nexus</span>
-    </a>
-    <div class="nav-links" style="margin-left: auto;">
-        <a href="/" class="nav-link">
-            <span>🏠</span>
-            <span>Главная</span>
+        <a href="/" class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Aura Nexus" class="logo-image">
         </a>
-        <a href="/login" class="nav-link">
-            <span>🔑</span>
-            <span>Вход</span>
-        </a>
-        <a href="/register" class="btn btn-sm">Регистрация</a>
-    </div>
-</nav>
+        <div class="nav-spacer"></div>
+        <div class="nav-right">
+            <a href="/" class="nav-link">🏠 Главная</a>
+            <a href="/login" class="nav-link">🔑 Вход</a>
+            <a href="/register" class="btn btn-sm">Регистрация</a>
+        </div>
+    </nav>
 
-    <div class="layout">
+    <div class="layout" style="margin-left:0;width:100%;">
         <main class="main-content" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
-            <div class="card" style="width: 100%; max-width: 400px;">
+            <div class="card" style="width: 100%; max-width: 420px;">
                 <div class="card-body" style="padding: 2rem;">
                     <div style="text-align: center; margin-bottom: 2rem;">
                         <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">Регистрация</h1>
@@ -37,9 +31,7 @@
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">
-                                {{ message }}
-                            </div>
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
@@ -49,35 +41,31 @@
                             <label class="form-label">Логин</label>
                             <input type="text" name="username" class="form-control" placeholder="Минимум 3 символа" required minlength="3">
                         </div>
-
                         <div class="form-group">
                             <label class="form-label">Email</label>
                             <input type="email" name="email" class="form-control" placeholder="example@mail.com" required>
                         </div>
-
+                        <div class="form-group">
+                            <label class="form-label">Дата рождения</label>
+                            <input type="date" name="birth_date" class="form-control" required max="2020-01-01">
+                            <div class="form-hint">Необходимо для доступа к контенту 18+</div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Пароль</label>
                             <input type="password" name="password" class="form-control" placeholder="Минимум 4 символа" required minlength="4">
                         </div>
-
                         <div class="form-group">
                             <label class="form-label">Повторите пароль</label>
                             <input type="password" name="confirm_password" class="form-control" placeholder="Повторите пароль" required>
                         </div>
-
                         <div style="margin: 1rem 0; font-size: 0.85rem; color: var(--text-secondary);">
                             Регистрируясь, вы соглашаетесь с <a href="/user_agreement">пользовательским соглашением</a>
                         </div>
-
-                        <button type="submit" class="btn btn-full">
-                            Создать аккаунт
-                        </button>
+                        <button type="submit" class="btn btn-full">Создать аккаунт</button>
                     </form>
 
                     <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-                        <p style="color: var(--text-secondary);">
-                            Уже есть аккаунт? <a href="/login">Войти</a>
-                        </p>
+                        <p style="color: var(--text-secondary);">Уже есть аккаунт? <a href="/login">Войти</a></p>
                     </div>
                 </div>
             </div>

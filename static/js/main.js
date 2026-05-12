@@ -170,10 +170,8 @@ function initSlideshows() {
         var prev = ss.querySelector('.slideshow-prev');
         var next = ss.querySelector('.slideshow-next');
         var dots = ss.querySelectorAll('.slideshow-dot');
-        var current = 0;
-        var total = slides.length;
+        var current = 0, total = slides.length;
         if (total <= 1) return;
-
         function goTo(i) {
             if (i < 0) i = total - 1;
             if (i >= total) i = 0;

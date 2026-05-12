@@ -66,7 +66,7 @@ NSFW_KEYWORDS = [
     'наркотики', 'купить наркотики', 'закладки',
     'убить', 'убийство', 'терроризм', 'взрыв',
     'нацизм', 'фашизм', 'расизм',
-]
+]   
 
 FONT_FAMILY = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
 

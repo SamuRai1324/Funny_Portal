@@ -37,6 +37,7 @@
             <div class="post-time">
                 <span data-utc="{{ post.created_at }}">{{ post.created_at[:16] }}</span>
             </div>
+            <div class="post-time"><span data-utc="{{ post.created_at }}">{{ post.created_at[:16] }}</span></div>
         </div>
 
         <div class="dropdown post-options">
@@ -85,13 +86,10 @@
             {% if f.file_type == 'video' %}{% set _ = videos.append(f) %}
             {% else %}{% set _ = photos.append(f) %}{% endif %}
         {% endfor %}
-
         {% if photos|length > 0 %}
         <div class="post-media">
             {% if photos|length == 1 %}
-            <div class="slideshow-single">
-                <img src="{{ url_for('uploaded_file', filename=photos[0].file_path) }}" alt="">
-            </div>
+            <div class="slideshow-single"><img src="{{ url_for('uploaded_file', filename=photos[0].file_path) }}" alt=""></div>
             {% else %}
             <div class="slideshow" data-slide-count="{{ photos|length }}">
                 <div class="slideshow-track">
@@ -104,15 +102,12 @@
                 <button class="slideshow-prev" type="button">‹</button>
                 <button class="slideshow-next" type="button">›</button>
                 <div class="slideshow-dots">
-                    {% for f in photos %}
-                    <span class="slideshow-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></span>
-                    {% endfor %}
+                    {% for f in photos %}<span class="slideshow-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></span>{% endfor %}
                 </div>
             </div>
             {% endif %}
         </div>
         {% endif %}
-
         {% for f in videos %}
         <div class="post-media">
             <video src="{{ url_for('uploaded_file', filename=f.file_path) }}" controls preload="metadata"></video>
@@ -179,12 +174,10 @@
 </article>
 
 {% if current_user %}
+<!-- Report modal -->
 <div class="modal-overlay" id="report-modal-{{ post.id }}">
     <div class="modal">
-        <div class="modal-header">
-            <h3 class="modal-title">⚠️ Жалоба</h3>
-            <button class="modal-close">&times;</button>
-        </div>
+        <div class="modal-header"><h3 class="modal-title">⚠️ Жалоба</h3><button class="modal-close">&times;</button></div>
         <form action="/api/report" method="POST">
             <div class="modal-body">
                 <input type="hidden" name="post_id" value="{{ post.id }}">
@@ -200,11 +193,9 @@
                     <label class="form-label">Описание</label>
                     <textarea name="description" class="form-control" placeholder="Опишите..."></textarea>
                 </div>
+                <div class="form-group"><label class="form-label">Описание</label><textarea name="description" class="form-control" placeholder="Опишите..."></textarea></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary modal-close">Отмена</button>
-                <button type="submit" class="btn btn-danger">Отправить</button>
-            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary modal-close">Отмена</button><button type="submit" class="btn btn-danger">Отправить</button></div>
         </form>
     </div>
 </div>
